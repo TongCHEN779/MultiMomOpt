@@ -4,7 +4,7 @@ function [OptVal, time, stat] = solve_moment_manual(typ, obj, MomConst, LocConst
 %
 % INPUT:
 %   typ: 'min' or 'max' (str)
-%   obj: [f_alpha | alpha], coefficients of objective w.r.t support 
+%   obj: [f_alpha | alpha], coefficients of objective w.r.t support
 %       (double)
 %   MomConst: moment sdp constraints (cell --> struct)
 %       MomConst{i}.basis: support of variables (double)
@@ -16,14 +16,14 @@ function [OptVal, time, stat] = solve_moment_manual(typ, obj, MomConst, LocConst
 %       LocConst{i}.typ: '>=' or '<=' or '==' (str)
 %       LocConst{i}.ord: order of localization matrix (double)
 %   options: solver settings (cf. sdpsettings for YALMIP)
-% 
+%
 % OUTPUT:
 %   OptVal: optimaal value (double)
 %   time: running time (struct)
 %       time.solv: solving time
 %       time.yalm: modeling time
 %   stat: solution status
-% 
+%
 %% Author: T. Chen
 %%
 tic
@@ -47,34 +47,90 @@ elseif isequal(typ, 'min')
 end
 %
 for i = 1:NumMom
-    [SetVars, MomMat] = MomentMatrix(MomConst{i}.basis, MomConst{i}.ord, 'on', SetVars);
-    constraints = [constraints, MomMat>=0];
-    if isequal(turn, 'off')
-        for k = 1:length(SetVars.var)
-            if isequal(SetVars.supp(k, :), zeros(1, DimVar))
-                constraints = [constraints, SetVars.var(k)==1];
-                turn = 'on';
-                break
+    if isequal(options.duplicated, 'on')
+        [SetVars, MomMat] = MomentMatrix(MomConst{i}.basis, MomConst{i}.ord, options.duplicated, SetVars);
+        constraints = [constraints, MomMat>=0];
+        if isequal(turn, 'off')
+            for k = 1:length(SetVars.var)
+                if isequal(SetVars.supp(k, :), zeros(1, DimVar))
+                    constraints = [constraints, SetVars.var(k)==1];
+                    turn = 'on';
+                    break
+                end
+            end
+        end
+    elseif isequal(options.duplicated, 'off')
+        [vars, MomMat] = MomentMatrix(MomConst{i}.basis, MomConst{i}.ord, options.duplicated, SetVars);
+        constraints = [constraints, MomMat>=0];
+        % update variable set
+        SetVars.var = [SetVars.var; vars.var];
+        SetVars.supp = [SetVars.supp; vars.supp];
+        if isequal(turn, 'off')
+            for k = 1:length(SetVars.var)
+                if isequal(SetVars.supp(k, :), zeros(1, DimVar))
+                    constraints = [constraints, SetVars.var(k)==1];
+                    turn = 'on';
+                    break
+                end
+            end
+        end
+        for k = 1:length(vars.var)
+            for j = 1:length(SetVars.var)-length(vars.var)
+                if isequal(vars.supp(k,:), SetVars.supp(j,:))
+                    constraints = [constraints, vars.var(k)==SetVars.var(j)];
+                    break
+                end
             end
         end
     end
 end
 %
 for i = 1:NumLoc
-    [SetVars, LocMat] = LocalizationMatrix(LocConst{i}.pol, LocConst{i}.basis, LocConst{i}.ord, 'on', SetVars);
-    if isequal(LocConst{i}.typ, '>=')
-        constraints = [constraints, LocMat>=0];
-    elseif isequal(LocConst{i}.typ, '<=')
-        constraints = [constraints, LocMat<=0];
-    elseif isequal(LocConst{i}.typ, '==')
-        constraints = [constraints, LocMat==0];
-    end
-    if isequal(turn, 'off')
-        for k = 1:length(SetVars.var)
-            if isequal(SetVars.supp(k, :), zeros(1, DimVar))
-                constraints = [constraints, SetVars.var(k)==1];
-                turn = 'on';
-                break
+    if isequal(options.duplicated, 'on')
+        [SetVars, LocMat] = LocalizationMatrix(LocConst{i}.pol, LocConst{i}.basis, LocConst{i}.ord, options.duplicated, SetVars);
+        if isequal(LocConst{i}.typ, '>=')
+            constraints = [constraints, LocMat>=0];
+        elseif isequal(LocConst{i}.typ, '<=')
+            constraints = [constraints, LocMat<=0];
+        elseif isequal(LocConst{i}.typ, '==')
+            constraints = [constraints, LocMat==0];
+        end
+        if isequal(turn, 'off')
+            for k = 1:length(SetVars.var)
+                if isequal(SetVars.supp(k, :), zeros(1, DimVar))
+                    constraints = [constraints, SetVars.var(k)==1];
+                    turn = 'on';
+                    break
+                end
+            end
+        end
+    elseif isequal(options.duplicated, 'off')
+        [vars, LocMat] = LocalizationMatrix(LocConst{i}.pol, LocConst{i}.basis, LocConst{i}.ord, options.duplicated, SetVars);
+        if isequal(LocConst{i}.typ, '>=')
+            constraints = [constraints, LocMat>=0];
+        elseif isequal(LocConst{i}.typ, '<=')
+            constraints = [constraints, LocMat<=0];
+        elseif isequal(LocConst{i}.typ, '==')
+            constraints = [constraints, LocMat==0];
+        end
+        % update variable set
+        SetVars.var = [SetVars.var; vars.var];
+        SetVars.supp = [SetVars.supp; vars.supp];
+        if isequal(turn, 'off')
+            for k = 1:length(SetVars.var)
+                if isequal(SetVars.supp(k, :), zeros(1, DimVar))
+                    constraints = [constraints, SetVars.var(k)==1];
+                    turn = 'on';
+                    break
+                end
+            end
+        end
+        for k = 1:length(vars.var)
+            for j = 1:length(SetVars.var)-length(vars.var)
+                if isequal(vars.supp(k,:), SetVars.supp(j,:))
+                    constraints = [constraints, vars.var(k)==SetVars.var(j)];
+                    break
+                end
             end
         end
     end
@@ -93,7 +149,7 @@ elseif isequal(typ, 'min')
     OptVal = value(objective);
 end
 time.solv = sol.solvertime;
-time.yalm = sol.yalmiptime; 
+time.yalm = sol.yalmiptime;
 stat = sol.info;
 %
 if isequal(stat, 'Successfully solved (MOSEK)')
@@ -101,5 +157,5 @@ if isequal(stat, 'Successfully solved (MOSEK)')
 else
     fprintf('The solver encountered some issues: %s\n', stat)
 end
-fprintf('Total running time is: %f (modeling time: %f, yalmip time: %f, solver time: %f)\n', time.model+time.yalm+time.solv, time.model, time.yalm, time.solv)
+fprintf('Total running time is: %f (modeling time: %f, yalmip time: %f, solver time: %f)\n\n', time.model+time.yalm+time.solv, time.model, time.yalm, time.solv)
 end

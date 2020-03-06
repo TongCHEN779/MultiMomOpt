@@ -56,7 +56,7 @@ elseif nargin > 2 && level > 0
             end
         else
             NumMom = NumMom + 1;
-            MomConst{NumMom}.basis = sparse(E(1:size(i), :));
+            MomConst{NumMom}.basis = sparse(E(cliques{i}, :));
             MomConst{NumMom}.ord = order;
         end
     end
@@ -81,7 +81,7 @@ elseif nargin > 2 && level > 0
         else
             NumLoc = NumLoc + 1;
             LocConst{NumLoc}.pol = sparse([1, zeros(1,n); -1, 2*E(i,:)]);
-            LocConst{NumLoc}.basis = sparse(E(1:sizes(idx), :));
+            LocConst{NumLoc}.basis = sparse(E(cliques{idx}, :));
             LocConst{NumLoc}.typ = '==';
             LocConst{NumLoc}.ord = order - 1;
         end

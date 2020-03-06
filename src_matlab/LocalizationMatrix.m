@@ -21,7 +21,7 @@ n = size(basis, 1);
 B = get_basis(n,order); s = size(B,1); C = B*basis;
 matrix = 0;
 de = size(pol, 1);
-if (nargin == 3) || (nargin == 5 && isequal(duplicated, 'off'))
+if isequal(duplicated, 'off')
     vars.var = []; vars.supp = [];
     for i = 1:s
         for j = 1:s
@@ -46,7 +46,7 @@ if (nargin == 3) || (nargin == 5 && isequal(duplicated, 'off'))
             end
         end
     end
-elseif nargin == 5 && isequal(duplicated, 'on')
+elseif isequal(duplicated, 'on')
     vars = SetVars;
     for i = 1:s
         for j = 1:s
