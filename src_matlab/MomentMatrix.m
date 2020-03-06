@@ -58,15 +58,4 @@ elseif nargin == 4 && isequal(duplicated, 'on')
         [vars, matrix] = LocalizationMatrix(pol, basis, order);
     end
 end
-% n = length(basis.var);
-% B = get_basis(n,2*order); s = size(B,1);
-% newvars.var = sdpvar(s-n-1,1);
-% newvars.supp = B(n+2:end,:)*basis.supp;
-% variable = sprintf("moment_%d_%d", n, order);
-% load('Moment_and_Localization_Matrices.mat',variable);
-% Matrix_temp = eval(variable); Psd = [1; basis.var; newvars.var];
-% Matrix = 0;
-% for t = 1:s
-%     Matrix = Matrix + Matrix_temp{t}*Psd(t);
-% end
 end
