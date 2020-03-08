@@ -14,6 +14,9 @@ function [OptVal, time, stat] = solve_moment_auto(typ, var, obj, MomConst, LocCo
 %       LocConst{i}.basis: monomial basis (sdpvar)
 %       LocConst{i}.typ: '>=' or '<=' or '==' (str)
 %       LocConst{i}.ord: order of localization matrix (double)
+%   options: solver settings (cf. sdpsettings for YALMIP)
+%       options.duplicated: if 'on' set marginals to be equal inside
+%           moments and localizations, outside otherwise
 % 
 % OUTPUT:
 %   OptVal: optimaal value (double)

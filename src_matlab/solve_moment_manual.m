@@ -16,6 +16,8 @@ function [OptVal, time, stat] = solve_moment_manual(typ, obj, MomConst, LocConst
 %       LocConst{i}.typ: '>=' or '<=' or '==' (str)
 %       LocConst{i}.ord: order of localization matrix (double)
 %   options: solver settings (cf. sdpsettings for YALMIP)
+%       options.duplicated: if 'on' set marginals to be equal inside
+%           moments and localizations, outside otherwise
 %
 % OUTPUT:
 %   OptVal: optimaal value (double)
@@ -32,60 +34,90 @@ constraints = [];
 % check constant 1 variables
 SetVars.var = sdpvar(size(obj, 1), 1); SetVars.supp = obj(:, 2:end);
 turn = 'off';
-for i = 1:length(SetVars.var)
-    if isequal(obj(i, 2:end), zeros(1, DimVar))
-        SetVars.var(i) = 1;
-        turn = 'on';
-        break
+find_idx = find(ismember(obj(:, 2:end), zeros(1, DimVar), 'row') == 1, 1);
+if ~isempty(find_idx)
+    SetVars.var(find_idx) = 1;
+    turn = 'on';
+end
+%
+if max(sum(obj(:,2:end),2)) > 2
+    ObjQuad = 'no';
+    if isequal(typ, 'max')
+        objective = - obj(:, 1)'*SetVars.var(1:size(obj, 1), 1);
+    elseif isequal(typ, 'min')
+        objective = obj(:, 1)'*SetVars.var(1:size(obj, 1), 1);
+    end
+else
+    ObjQuad = 'yes';
+    if isequal(options.duplicated, 'off')
+        if isequal(typ, 'max')
+            objective = - obj(:, 1)'*SetVars.var(1:size(obj, 1), 1);
+        elseif isequal(typ, 'min')
+            objective = obj(:, 1)'*SetVars.var(1:size(obj, 1), 1);
+        end
     end
 end
 %
-if isequal(typ, 'max')
-    objective = - obj(:, 1)'*SetVars.var(1:size(obj, 1), 1);
-elseif isequal(typ, 'min')
-    objective = obj(:, 1)'*SetVars.var(1:size(obj, 1), 1);
-end
-%
 for i = 1:NumMom
+    if i == 1
+        fprintf('Building up moment matrices: %.2f%% (%d/%d)\n', i/NumMom*100, i, NumMom)
+    else
+        s1 = num2str(floor((i-1)/NumMom*100)); s2 = num2str(i-1); s3 = num2str(NumMom);
+        fprintf([repmat('\b', 1, 9+length([s1,s2,s3])), '%.2f%% (%d/%d)\n'], i/NumMom*100, i, NumMom)
+    end
     if isequal(options.duplicated, 'on')
-        [SetVars, MomMat] = MomentMatrix(MomConst{i}.basis, MomConst{i}.ord, options.duplicated, SetVars);
+        if i == 1
+            [SetVars, MomMat] = MomentMatrix(MomConst{i}.basis, MomConst{i}.ord, options.duplicated, SetVars, ObjQuad);
+            if isequal(typ, 'max')
+                objective = - obj(:, 1)'*SetVars.var(1:size(obj, 1), 1);
+            elseif isequal(typ, 'min')
+                objective = obj(:, 1)'*SetVars.var(1:size(obj, 1), 1);
+            end
+        else
+            [SetVars, MomMat] = MomentMatrix(MomConst{i}.basis, MomConst{i}.ord, options.duplicated, SetVars, 'no');
+        end
         constraints = [constraints, MomMat>=0];
         if isequal(turn, 'off')
-            for k = 1:length(SetVars.var)
-                if isequal(SetVars.supp(k, :), zeros(1, DimVar))
-                    constraints = [constraints, SetVars.var(k)==1];
-                    turn = 'on';
-                    break
-                end
+            find_idx = find(ismember(SetVars.supp, zeros(1, DimVar), 'row') == 1, 1);
+            if ~isempty(find_idx)
+                constraints = [constraints, SetVars.var(find_idx)==1];
+                turn = 'on';
             end
         end
     elseif isequal(options.duplicated, 'off')
-        [vars, MomMat] = MomentMatrix(MomConst{i}.basis, MomConst{i}.ord, options.duplicated, SetVars);
+        [vars, MomMat] = MomentMatrix(MomConst{i}.basis, MomConst{i}.ord, options.duplicated, SetVars, 'no');
         constraints = [constraints, MomMat>=0];
         % update variable set
         SetVars.var = [SetVars.var; vars.var];
         SetVars.supp = [SetVars.supp; vars.supp];
         if isequal(turn, 'off')
-            for k = 1:length(SetVars.var)
-                if isequal(SetVars.supp(k, :), zeros(1, DimVar))
-                    constraints = [constraints, SetVars.var(k)==1];
-                    turn = 'on';
-                    break
-                end
+            find_idx = find(ismember(SetVars.supp, zeros(1, DimVar), 'row') == 1, 1);
+            if ~isempty(find_idx)
+                constraints = [constraints, SetVars.var(find_idx)==1];
+                turn = 'on';
             end
         end
-        for k = 1:length(vars.var)
-            for j = 1:length(SetVars.var)-length(vars.var)
-                if isequal(vars.supp(k,:), SetVars.supp(j,:))
-                    constraints = [constraints, vars.var(k)==SetVars.var(j)];
-                    break
+        if isequal(ObjQuad, 'no') || (isequal(ObjQuad, 'yes') && length(vars.var) ~= length(SetVars.var)-length(vars.var))
+            for k = 1:length(vars.var)
+                find_idx = find(ismember(SetVars.supp(1:length(SetVars.var)-length(vars.var), :), vars.supp(k,:), 'row') == 1, 1);
+                if ~isempty(find_idx)
+                    constraints = [constraints, vars.var(k)==SetVars.var(find_idx)];
+                    turn = 'on';
                 end
             end
+        elseif isequal(ObjQuad, 'yes') && i == 1 && length(vars.var) == length(SetVars.var)-length(vars.var)
+            constraints = [constraints, vars.var==SetVars.var(1:length(vars.var))];
         end
     end
 end
 %
 for i = 1:NumLoc
+    if i == 1
+        fprintf('Building up localization matrices: %.2f%% (%d/%d)\n', i/NumLoc*100, i, NumLoc)
+    else
+        s1 = num2str(floor((i-1)/NumLoc*100)); s2 = num2str(i-1); s3 = num2str(NumLoc);
+        fprintf([repmat('\b', 1, 9+length([s1,s2,s3])), '%.2f%% (%d/%d)\n'], i/NumLoc*100, i, NumLoc)
+    end
     if isequal(options.duplicated, 'on')
         [SetVars, LocMat] = LocalizationMatrix(LocConst{i}.pol, LocConst{i}.basis, LocConst{i}.ord, options.duplicated, SetVars);
         if isequal(LocConst{i}.typ, '>=')
@@ -96,12 +128,10 @@ for i = 1:NumLoc
             constraints = [constraints, LocMat==0];
         end
         if isequal(turn, 'off')
-            for k = 1:length(SetVars.var)
-                if isequal(SetVars.supp(k, :), zeros(1, DimVar))
-                    constraints = [constraints, SetVars.var(k)==1];
-                    turn = 'on';
-                    break
-                end
+            find_idx = find(ismember(SetVars.supp, zeros(1, DimVar), 'row') == 1, 1);
+            if ~isempty(find_idx)
+                constraints = [constraints, SetVars.var(find_idx)==1];
+                turn = 'on';
             end
         end
     elseif isequal(options.duplicated, 'off')
@@ -117,24 +147,24 @@ for i = 1:NumLoc
         SetVars.var = [SetVars.var; vars.var];
         SetVars.supp = [SetVars.supp; vars.supp];
         if isequal(turn, 'off')
-            for k = 1:length(SetVars.var)
-                if isequal(SetVars.supp(k, :), zeros(1, DimVar))
-                    constraints = [constraints, SetVars.var(k)==1];
-                    turn = 'on';
-                    break
-                end
+            find_idx = find(ismember(SetVars.supp, zeros(1, DimVar), 'row') == 1, 1);
+            if ~isempty(find_idx)
+                constraints = [constraints, SetVars.var(find_idx)==1];
+                turn = 'on';
             end
         end
-        for k = 1:length(vars.var)
-            for j = 1:length(SetVars.var)-length(vars.var)
-                if isequal(vars.supp(k,:), SetVars.supp(j,:))
-                    constraints = [constraints, vars.var(k)==SetVars.var(j)];
-                    break
+        if length(SetVars.var) ~= length(vars.var)
+            for k = 1:length(vars.var)
+                find_idx = find(ismember(SetVars.supp(1:length(SetVars.var)-length(vars.var), :), vars.supp(k,:), 'row') == 1, 1);
+                if ~isempty(find_idx)
+                    constraints = [constraints, vars.var(k)==SetVars.var(find_idx)];
+                    turn = 'on';
                 end
             end
         end
     end
 end
+%
 time.model = toc;
 %
 fprintf('Problem type: %s\n', typ)

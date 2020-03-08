@@ -1,4 +1,4 @@
-function [vars, matrix] = MomentMatrix(basis, order, duplicated, SetVars)
+function [vars, matrix] = MomentMatrix(basis, order, duplicated, SetVars, ObjQuad)
 %% Compute the moment matrix
 %%
 %
@@ -30,27 +30,38 @@ if isequal(duplicated, 'off')
         [vars, matrix] = LocalizationMatrix(pol, basis, order, duplicated, SetVars);
     end
 elseif isequal(duplicated, 'on')
-    vars = SetVars;
     if order == 1
+        vars = SetVars;
         n = size(basis, 1);
         E = sparse([zeros(1+n, n-1), [2, zeros(1,n); ones(n,1), eye(n)]]);
         matrix = sdpvar(n+1);
         for i = 1:n+1
             % check common variables
-            for j = i:n+1
-                new = 1;
-                for k = 1:length(vars.var)
-                    if isequal(E(j-i+1, end-n-i+2:end-i+1), vars.supp(k,:))
-                        matrix(j,i) = vars.var(k); matrix(i,j) = vars.var(k);
+            if isequal(ObjQuad, 'no')
+                for j = i:n+1
+                    new = 1;
+                    find_idx = find(ismember(vars.supp, E(j-i+1, end-n-i+2:end-i+1), 'row') == 1, 1);
+                    if ~isempty(find_idx)
+                        matrix(j,i) = vars.var(find_idx); matrix(i,j) = vars.var(find_idx);
                         new = 0;
-                        break
+                    end
+%                     for k = 1:length(vars.var)
+%                         if isequal(E(j-i+1, end-n-i+2:end-i+1), vars.supp(k,:))
+%                             matrix(j,i) = vars.var(k); matrix(i,j) = vars.var(k);
+%                             new = 0;
+%                             break
+%                         end
+%                     end
+                    %
+                    if new == 1
+                        vars.var = [vars.var; matrix(j,i)];
+                        vars.supp = [vars.supp; E(j-i+1, end-n-i+2:end-i+1)];
                     end
                 end
-                %
-                if new == 1
-                    vars.var = [vars.var; matrix(j,i)];
-                    vars.supp = [vars.supp; E(j-i+1, end-n-i+2:end-i+1)];
-                end
+            elseif isequal(ObjQuad, 'yes')
+%                 i
+                matrix(i:end, i) = vars.var((2*n+4-i)*(i-1)/2 + 1:(2*n+3-i)*(i)/2); 
+                matrix(i, i:end) = vars.var((2*n+4-i)*(i-1)/2 + 1:(2*n+3-i)*(i)/2);
             end
         end
     elseif order >= 2

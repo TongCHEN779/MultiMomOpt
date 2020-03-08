@@ -24,23 +24,32 @@ de = size(pol, 1);
 if isequal(duplicated, 'off')
     vars.var = []; vars.supp = [];
     for i = 1:s
-        for j = 1:s
+        for j = i:s
             for k = 1:de
+%                 [i,j,s]
                 new = 1;
                 %
-                for z = 1:length(vars.var)
-                    if isequal(vars.supp(z,:), pol(k,2:end)+C(i,:)+C(j,:))
-                        E = zeros(s,s); E(i,j) = 1; E = sparse(E);
-                        matrix = matrix + pol(k,1)*vars.var(z)*E;
+                if ~isempty(vars.supp)
+                    find_idx = find(ismember(vars.supp, pol(k,2:end)+C(i,:)+C(j,:), 'row') == 1, 1);
+                    if ~isempty(find_idx)
+                        E = zeros(s,s); E(i,j) = 1; E(j,i) = 1; E = sparse(E);
+                        matrix = matrix + pol(k,1)*vars.var(find_idx)*E;
                         new = 0;
-                        break
                     end
                 end
+%                 for z = 1:length(vars.var)
+%                     if isequal(vars.supp(z,:), pol(k,2:end)+C(i,:)+C(j,:))
+%                         E = zeros(s,s); E(i,j) = 1; E = sparse(E);
+%                         matrix = matrix + pol(k,1)*vars.var(z)*E;
+%                         new = 0;
+%                         break
+%                     end
+%                 end
                 %
                 if new == 1
                     vars.var = [vars.var; sdpvar(1,1)];
                     vars.supp = [vars.supp; sparse(pol(k,2:end)+C(i,:)+C(j,:))];
-                    E = zeros(s,s); E(i,j) = 1; E = sparse(E);
+                    E = zeros(s,s); E(i,j) = 1; E(j,i) = 1; E = sparse(E);
                     matrix = matrix + pol(k,1)*vars.var(end)*E;
                 end
             end
@@ -49,23 +58,29 @@ if isequal(duplicated, 'off')
 elseif isequal(duplicated, 'on')
     vars = SetVars;
     for i = 1:s
-        for j = 1:s
+        for j = i:s
             for k = 1:de
                 new = 1;
                 % check common variables
-                for z = 1:length(vars.var)
-                    if isequal(vars.supp(z,:), pol(k,2:end)+C(i,:)+C(j,:))
-                        E = zeros(s,s); E(i,j) = 1; E = sparse(E);
-                        matrix = matrix + pol(k,1)*vars.var(z)*E;
-                        new = 0;
-                        break
-                    end
+                find_idx = find(ismember(vars.supp, pol(k,2:end)+C(i,:)+C(j,:), 'row') == 1, 1);
+                if ~isempty(find_idx)
+                    E = zeros(s,s); E(i,j) = 1; E(j,i) = 1; E = sparse(E);
+                    matrix = matrix + pol(k,1)*vars.var(find_idx)*E;
+                    new = 0;
                 end
+%                 for z = 1:length(vars.var)
+%                     if isequal(vars.supp(z,:), pol(k,2:end)+C(i,:)+C(j,:))
+%                         E = zeros(s,s); E(i,j) = 1; E = sparse(E);
+%                         matrix = matrix + pol(k,1)*vars.var(z)*E;
+%                         new = 0;
+%                         break
+%                     end
+%                 end
                 %
                 if new == 1
                     vars.var = [vars.var; sdpvar(1,1)];
                     vars.supp = [vars.supp; sparse(pol(k,2:end)+C(i,:)+C(j,:))];
-                    E = zeros(s,s); E(i,j) = 1; E = sparse(E);
+                    E = zeros(s,s); E(i,j) = 1; E(j,i) = 1; E = sparse(E);
                     matrix = matrix + pol(k,1)*vars.var(end)*E;
                 end
             end

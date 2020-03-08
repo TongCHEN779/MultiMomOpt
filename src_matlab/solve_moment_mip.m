@@ -1,10 +1,9 @@
-function [OptVal, time, stat] = solve_moment_maxcut(A, W, options)
+function [OptVal, time, stat] = solve_moment_mip(A, options)
 %% Solve MAX-CUT problem using rounding technique
 %%
 %
 % INPUT:
-%   A: adjacency matrix (double)
-%   W: weight matrix (double)
+%   A: weight matrix (double)
 %   options: solver settings (cf. sdpsettings for YALMIP)
 %       options.duplicated: if 'on' set marginals to be equal inside
 %           moments and localizations, outside otherwise (str)
@@ -24,16 +23,16 @@ function [OptVal, time, stat] = solve_moment_maxcut(A, W, options)
 %%
 if nargin == 2
 end
-n = size(A, 1); L = sparse(diag((A.*W)*ones(n,1))) - A.*W; typ = 'max';
+n = size(A, 1); typ = 'min';
 %
 obj = []; E0 = sparse([zeros(1+n, n-1), [2, zeros(1,n); ones(n,1), eye(n)]]); E = sparse([eye(n,n); eye(n,n)]);
-L = L/2;
+A = 2*A;
 for i = 1:n
-    L(i,i) = L(i,i)/2;
+    A(i,i) = A(i,i)/2;
 end
 obj = [obj, [zeros(n+1,1), E0(1:end, end-n+1:end)]];
 for i = 2:n+1
-    obj = [obj; [L(i-1:end,i-1), E0(1:end-i+1, end-n-i+2:end-i+1)]];
+    obj = [obj; [A(i-1:end,i-1), E0(1:end-i+1, end-n-i+2:end-i+1)]];
 end
 %
 if options.level == 0 % Shor's relaxation
@@ -77,14 +76,14 @@ elseif options.level > 0 && isequal(options.clique, 'on')
         if options.level < sizes(idx)
             for j = 1:sizes(idx)
                 NumLoc = NumLoc + 1;
-                LocConst{NumLoc}.pol = sparse([1, zeros(1,n); -1, 2*E(i,:)]);
+                LocConst{NumLoc}.pol = sparse([1, E(i,:); -1, 2*E(i,:)]);
                 LocConst{NumLoc}.basis = sparse(E(clique(j:j+options.level-1), :));
                 LocConst{NumLoc}.typ = '==';
                 LocConst{NumLoc}.ord = options.order - 1;
             end
         else
             NumLoc = NumLoc + 1;
-            LocConst{NumLoc}.pol = sparse([1, zeros(1,n); -1, 2*E(i,:)]);
+            LocConst{NumLoc}.pol = sparse([1, E(i,:); -1, 2*E(i,:)]);
             LocConst{NumLoc}.basis = sparse(E(cliques{idx}, :));
             LocConst{NumLoc}.typ = '==';
             LocConst{NumLoc}.ord = options.order - 1;
@@ -101,7 +100,7 @@ elseif options.level > 0 && isequal(options.clique, 'off')
             MomConst{NumMom}.ord = options.order;
             %
             NumLoc = NumLoc + 1;
-            LocConst{NumLoc}.pol = sparse([1, zeros(1,n); -1, 2*E(i,:)]);
+            LocConst{NumLoc}.pol = sparse([1, E(i,:); -1, 2*E(i,:)]);
             LocConst{NumLoc}.basis = sparse(E(clique(i:i+options.level-1), :));
             LocConst{NumLoc}.typ = '==';
             LocConst{NumLoc}.ord = options.order - 1;
@@ -113,7 +112,7 @@ elseif options.level > 0 && isequal(options.clique, 'off')
         %
         for i = 1:n
             NumLoc = NumLoc + 1;
-            LocConst{NumLoc}.pol = sparse([1, zeros(1,n); -1, 2*E(i,:)]);
+            LocConst{NumLoc}.pol = sparse([1, E(i,:); -1, 2*E(i,:)]);
             LocConst{NumLoc}.basis = sparse(E(1:n, :));
             LocConst{NumLoc}.typ = '==';
             LocConst{NumLoc}.ord = options.order - 1;
@@ -121,7 +120,7 @@ elseif options.level > 0 && isequal(options.clique, 'off')
     end
 end
 %
-fprintf('\nMAX-CUT problem: %d vertices, %d edges, duplicated %s, clique %s, order %d, level %d\n', n, sum(sum(full(A)))/2, options.duplicated, options.clique, options.order, options.level)
+fprintf('\nMixed Integer Programming (MIP): %d variables, %d entries, duplicated %s, clique %s, order %d, level %d\n', n, (sum(sum(full(1*(A~=0))))-sum(1*diag(A~=0)))/2+sum(1*diag(A~=0)), options.duplicated, options.clique, options.order, options.level)
 %
 [OptVal, time, stat] = solve_moment_manual(typ, obj, MomConst, LocConst, options);
 end
