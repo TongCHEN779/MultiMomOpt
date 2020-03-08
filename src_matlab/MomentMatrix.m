@@ -52,7 +52,6 @@ elseif isequal(duplicated, 'on')
                     end
                 end
             elseif isequal(ObjQuad, 'yes')
-%                 i
                 matrix(i:end, i) = vars.var((2*n+4-i)*(i-1)/2 + 1:(2*n+3-i)*(i)/2); 
                 matrix(i, i:end) = vars.var((2*n+4-i)*(i-1)/2 + 1:(2*n+3-i)*(i)/2);
             end
