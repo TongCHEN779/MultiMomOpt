@@ -26,7 +26,6 @@ if isequal(duplicated, 'off')
     for i = 1:s
         for j = i:s
             for k = 1:de
-%                 [i,j,s]
                 new = 1;
                 %
                 if ~isempty(vars.supp)
@@ -37,14 +36,6 @@ if isequal(duplicated, 'off')
                         new = 0;
                     end
                 end
-%                 for z = 1:length(vars.var)
-%                     if isequal(vars.supp(z,:), pol(k,2:end)+C(i,:)+C(j,:))
-%                         E = zeros(s,s); E(i,j) = 1; E = sparse(E);
-%                         matrix = matrix + pol(k,1)*vars.var(z)*E;
-%                         new = 0;
-%                         break
-%                     end
-%                 end
                 %
                 if new == 1
                     vars.var = [vars.var; sdpvar(1,1)];
@@ -68,14 +59,6 @@ elseif isequal(duplicated, 'on')
                     matrix = matrix + pol(k,1)*vars.var(find_idx)*E;
                     new = 0;
                 end
-%                 for z = 1:length(vars.var)
-%                     if isequal(vars.supp(z,:), pol(k,2:end)+C(i,:)+C(j,:))
-%                         E = zeros(s,s); E(i,j) = 1; E = sparse(E);
-%                         matrix = matrix + pol(k,1)*vars.var(z)*E;
-%                         new = 0;
-%                         break
-%                     end
-%                 end
                 %
                 if new == 1
                     vars.var = [vars.var; sdpvar(1,1)];
