@@ -1,4 +1,4 @@
-function [OptVal, time, stat] = solve_moment_mip(A, options)
+function [OptVal, time, stat, obj, MomConst, LocConst] = solve_moment_mip(A, options)
 %% Solve MAX-CUT problem using rounding technique
 %%
 %
@@ -39,7 +39,7 @@ if options.level == 0 % Shor's relaxation
     MomConst{1}.basis = sparse(eye(n,n)); MomConst{1}.ord = 1;
     %
     for i = 1:n
-        LocConst{i}.pol = sparse([1, zeros(1,n); -1, 2*E(i,:)]);
+        LocConst{i}.pol = sparse([1, E(i,:); -1, 2*E(i,:)]);
         LocConst{i}.basis = sparse(eye(n,n));
         LocConst{i}.typ = '==';
         LocConst{i}.ord = 0;
@@ -90,7 +90,8 @@ elseif options.level > 0 && isequal(options.clique, 'on')
         end
     end
 elseif options.level > 0 && isequal(options.clique, 'off')
-    MomConst{1}.basis = sparse(eye(n,n)); MomConst{1}.ord = 1;
+    MomConst{1}.basis = sparse(eye(n,n));
+    MomConst{1}.ord = 1;
     NumMom = 1; NumLoc = 0;
     clique = [1:n, 1:n];
     if options.level < n

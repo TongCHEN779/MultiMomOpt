@@ -76,6 +76,7 @@ for i = 1:NumMom
         else
             [SetVars, MomMat] = MomentMatrix(MomConst{i}.basis, MomConst{i}.ord, options.duplicated, SetVars, 'no');
         end
+%         sdisplay(MomMat)
         constraints = [constraints, MomMat>=0];
         if isequal(turn, 'off')
             find_idx = find(ismember(SetVars.supp, zeros(1, DimVar), 'row') == 1, 1);
@@ -120,6 +121,7 @@ for i = 1:NumLoc
     end
     if isequal(options.duplicated, 'on')
         [SetVars, LocMat] = LocalizationMatrix(LocConst{i}.pol, LocConst{i}.basis, LocConst{i}.ord, options.duplicated, SetVars);
+%         sdisplay(LocMat)
         if isequal(LocConst{i}.typ, '>=')
             constraints = [constraints, LocMat>=0];
         elseif isequal(LocConst{i}.typ, '<=')
@@ -164,6 +166,7 @@ for i = 1:NumLoc
         end
     end
 end
+% sdisplay(objective)
 %
 time.model = toc;
 %
@@ -187,5 +190,6 @@ if isequal(stat, 'Successfully solved (MOSEK)')
 else
     fprintf('The solver encountered some issues: %s\n', stat)
 end
-fprintf('Total running time is: %f (modeling time: %f, yalmip time: %f, solver time: %f)\n\n', time.model+time.yalm+time.solv, time.model, time.yalm, time.solv)
+fprintf('Total running time is: %f seconds (modeling time: %f seconds, yalmip time: %f seconds, solver time: %f seconds)\n\n', time.model+time.yalm+time.solv, time.model, time.yalm, time.solv)
+% double(SetVars.var)
 end

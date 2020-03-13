@@ -37,15 +37,15 @@ function solve_moment_maxcut(A, W, options)
                     NumMom = NumMom + 1;
                     MomConst = vcat(MomConst, Array{Any}(undef, 1));
                     MomConst[NumMom] = Dict();
-                    MomConst[NumMom]["basis"] = sparse(E[clique[j:j+options["level"]-1], :]');
-                    MomConst[NumMom]["ord"] = options["order"];
+                    MomConst[NumMom]["basis"] = sparse(E[clique[j:j+options["level"]-1], :]);
+                    MomConst[NumMom]["ord"] = options["ord"];
                 end
             else
                 NumMom = NumMom + 1;
                 MomConst = vcat(MomConst, Array{Any}(undef, 1));
                 MomConst[NumMom] = Dict();
                 MomConst[NumMom]["basis"] = sparse(E[cliques[i], :]');
-                MomConst[NumMom]["ord"] = options["order"];
+                MomConst[NumMom]["ord"] = options["ord"];
             end
         end
         LocConst = Array{Any}(undef, 0);
@@ -63,9 +63,9 @@ function solve_moment_maxcut(A, W, options)
                     LocConst = vcat(LocConst, Array{Any}(undef, 1));
                     LocConst[NumLoc] = Dict();
                     LocConst[NumLoc]["pol"] = sparse([1 zeros(1,n); -1 2*E[i,:]']);
-                    LocConst[NumLoc]["basis"] = sparse(E[clique[j:j+options["level"]-1], :]');
+                    LocConst[NumLoc]["basis"] = sparse(E[clique[j:j+options["level"]-1], :]);
                     LocConst[NumLoc]["typ"] = "==";
-                    LocConst[NumLoc]["ord"] = options["order"] - 1;
+                    LocConst[NumLoc]["ord"] = options["ord"] - 1;
                 end
             else
                 NumLoc = NumLoc + 1;
@@ -74,7 +74,7 @@ function solve_moment_maxcut(A, W, options)
                 LocConst[NumLoc]["pol"] = sparse([1 zeros(1,n); -1 2*E[i,:]']);
                 LocConst[NumLoc]["basis"] = sparse(E[cliques[idx], :]');
                 LocConst[NumLoc]["typ"] = "==";
-                LocConst[NumLoc]["ord"] = options["order"] - 1;
+                LocConst[NumLoc]["ord"] = options["ord"] - 1;
             end
         end
     elseif options["level"] > 0 && isequal(options["clique"], "off")
@@ -88,42 +88,42 @@ function solve_moment_maxcut(A, W, options)
                 NumMom = NumMom + 1;
                 MomConst = vcat(MomConst, Array{Any}(undef, 1));
                 MomConst[NumMom] = Dict();
-                MomConst[NumMom]["basis"] = sparse(E[clique[i:i+options["level"]-1], :]');
-                MomConst[NumMom]["ord"] = options["order"];
+                MomConst[NumMom]["basis"] = sparse(E[clique[i:i+options["level"]-1], :]);
+                MomConst[NumMom]["ord"] = options["ord"];
                 NumLoc = NumLoc + 1;
                 LocConst = vcat(LocConst, Array{Any}(undef, 1));
                 LocConst[NumLoc] = Dict();
                 LocConst[NumLoc]["pol"] = sparse([1 zeros(1,n); -1 2*E[i,:]']);
-                LocConst[NumLoc]["basis"] = sparse(E[clique[i:i+options["level"]-1], :]');
+                LocConst[NumLoc]["basis"] = sparse(E[clique[i:i+options["level"]-1], :]);
                 LocConst[NumLoc]["typ"] = "==";
-                LocConst[NumLoc]["ord"] = options["order"] - 1;
+                LocConst[NumLoc]["ord"] = options["ord"] - 1;
             end
         else
             NumMom = NumMom + 1;
             MomConst = vcat(MomConst, Array{Any}(undef, 1));
             MomConst[NumMom] = Dict();
-            MomConst[NumMom]["basis"] = sparse(E[1:n, :]');
-            MomConst[NumMom]["ord"] = options["order"];
+            MomConst[NumMom]["basis"] = sparse(E[1:n, :]);
+            MomConst[NumMom]["ord"] = options["ord"];
             for i = 1:n
                 NumLoc = NumLoc + 1;
                 LocConst = vcat(LocConst, Array{Any}(undef, 1));
                 LocConst[NumLoc] = Dict();
                 LocConst[NumLoc]["pol"] = sparse([1 zeros(1,n); -1 2*E[i,:]']);
-                LocConst[NumLoc]["basis"] = sparse(E[1:n, :]');
+                LocConst[NumLoc]["basis"] = sparse(E[1:n, :]);
                 LocConst[NumLoc]["typ"] = "==";
-                LocConst[NumLoc]["ord"] = options["order"] - 1;
+                LocConst[NumLoc]["ord"] = options["ord"] - 1;
             end
         end
     end
-    @printf("\nMAX-CUT problem: %d vertices, %d edges, duplicated %s, clique %s, order %d, level %d\n", n, (sum(Matrix(1*(A.!=0))) - sum(diag(Matrix(1*(A.!=0)))))/2 + sum(diag(Matrix(1*(A.!=0)))), uppercase(options["duplicated"]), uppercase(options["clique"]), options["order"], options["level"])
-    # OptVal, time, stat = solve_moment_manual(typ, obj, MomConst, LocConst, options);
-    # return OptVal, time, stat
+    @printf("\nMAX-CUT problem: %d vertices, %d edges, clique %s, order %d, level %d\n", n, (sum(Matrix(1*(A.!=0))) - sum(diag(Matrix(1*(A.!=0)))))/2 + sum(diag(Matrix(1*(A.!=0)))), uppercase(options["clique"]), options["ord"], options["level"])
+    OptVal, time, stat = solve_moment_manual(typ, obj, MomConst, LocConst, options);
+    return OptVal, time, stat
 end
-# vars = matread("A.mat");
+# vars = matread("maxcut.mat");
 # A = vars["A"]; W = ones(size(A, 1), size(A, 1));
 # options = Dict();
-# options["duplicated"] = "on"; options["level"] = 0; options["clique"] = "on"; options["ord"] = 2;
-# solve_moment_maxcut(A, W, options)
+# options["level"] = 3; options["clique"] = "off"; options["ord"] = 2; options["silent"] = true; options["quad"] = true;
+# OptVal, running_time, status = solve_moment_maxcut(A, W, options)
 
 function solve_moment_mip(A, options)
     n = size(A, 1); typ = "min";
@@ -163,15 +163,15 @@ function solve_moment_mip(A, options)
                     NumMom = NumMom + 1;
                     MomConst = vcat(MomConst, Array{Any}(undef, 1));
                     MomConst[NumMom] = Dict();
-                    MomConst[NumMom]["basis"] = sparse(E[clique[j:j+options["level"]-1], :]');
-                    MomConst[NumMom]["ord"] = options["order"];
+                    MomConst[NumMom]["basis"] = sparse(E[clique[j:j+options["level"]-1], :]);
+                    MomConst[NumMom]["ord"] = options["ord"];
                 end
             else
                 NumMom = NumMom + 1;
                 MomConst = vcat(MomConst, Array{Any}(undef, 1));
                 MomConst[NumMom] = Dict();
                 MomConst[NumMom]["basis"] = sparse(E[cliques[i], :]');
-                MomConst[NumMom]["ord"] = options["order"];
+                MomConst[NumMom]["ord"] = options["ord"];
             end
         end
         LocConst = Array{Any}(undef, 0);
@@ -189,9 +189,9 @@ function solve_moment_mip(A, options)
                     LocConst = vcat(LocConst, Array{Any}(undef, 1));
                     LocConst[NumLoc] = Dict();
                     LocConst[NumLoc]["pol"] = sparse([1 E[i,:]'; -1 2*E[i,:]']);
-                    LocConst[NumLoc]["basis"] = sparse(E[clique[j:j+options["level"]-1], :]');
+                    LocConst[NumLoc]["basis"] = sparse(E[clique[j:j+options["level"]-1], :]);
                     LocConst[NumLoc]["typ"] = "==";
-                    LocConst[NumLoc]["ord"] = options["order"] - 1;
+                    LocConst[NumLoc]["ord"] = options["ord"] - 1;
                 end
             else
                 NumLoc = NumLoc + 1;
@@ -200,7 +200,7 @@ function solve_moment_mip(A, options)
                 LocConst[NumLoc]["pol"] = sparse([1 E[i,:]'; -1 2*E[i,:]']);
                 LocConst[NumLoc]["basis"] = sparse(E[cliques[idx], :]');
                 LocConst[NumLoc]["typ"] = "==";
-                LocConst[NumLoc]["ord"] = options["order"] - 1;
+                LocConst[NumLoc]["ord"] = options["ord"] - 1;
             end
         end
     elseif options["level"] > 0 && isequal(options["clique"], "off")
@@ -214,42 +214,42 @@ function solve_moment_mip(A, options)
                 NumMom = NumMom + 1;
                 MomConst = vcat(MomConst, Array{Any}(undef, 1));
                 MomConst[NumMom] = Dict();
-                MomConst[NumMom]["basis"] = sparse(E[clique[i:i+options["level"]-1], :]');
-                MomConst[NumMom]["ord"] = options["order"];
+                MomConst[NumMom]["basis"] = sparse(E[clique[i:i+options["level"]-1], :]);
+                MomConst[NumMom]["ord"] = options["ord"];
                 NumLoc = NumLoc + 1;
                 LocConst = vcat(LocConst, Array{Any}(undef, 1));
                 LocConst[NumLoc] = Dict();
                 LocConst[NumLoc]["pol"] = sparse([1 E[i,:]'; -1 2*E[i,:]']);
-                LocConst[NumLoc]["basis"] = sparse(E[clique[i:i+options["level"]-1], :]');
+                LocConst[NumLoc]["basis"] = sparse(E[clique[i:i+options["level"]-1], :]);
                 LocConst[NumLoc]["typ"] = "==";
-                LocConst[NumLoc]["ord"] = options["order"] - 1;
+                LocConst[NumLoc]["ord"] = options["ord"] - 1;
             end
         else
             NumMom = NumMom + 1;
             MomConst = vcat(MomConst, Array{Any}(undef, 1));
             MomConst[NumMom] = Dict();
-            MomConst[NumMom]["basis"] = sparse(E[1:n, :]');
-            MomConst[NumMom]["ord"] = options["order"];
+            MomConst[NumMom]["basis"] = sparse(I(n));
+            MomConst[NumMom]["ord"] = options["ord"];
             for i = 1:n
                 NumLoc = NumLoc + 1;
                 LocConst = vcat(LocConst, Array{Any}(undef, 1));
                 LocConst[NumLoc] = Dict();
                 LocConst[NumLoc]["pol"] = sparse([1 E[i,:]'; -1 2*E[i,:]']);
-                LocConst[NumLoc]["basis"] = sparse(E[1:n, :]');
+                LocConst[NumLoc]["basis"] = sparse(I(n));
                 LocConst[NumLoc]["typ"] = "==";
-                LocConst[NumLoc]["ord"] = options["order"] - 1;
+                LocConst[NumLoc]["ord"] = options["ord"] - 1;
             end
         end
     end
-    @printf("\nMixed Integer Programming (MIP): %d variables, %d entries, duplicated %s, clique %s, order %d, level %d\n", n, (sum(Matrix(1*(A.!=0))) - sum(diag(Matrix(1*(A.!=0)))))/2 + sum(diag(Matrix(1*(A.!=0)))), uppercase(options["duplicated"]), uppercase(options["clique"]), options["order"], options["level"])
-    # OptVal, time, stat = solve_moment_manual(typ, obj, MomConst, LocConst, options);
-    # return OptVal, time, stat
+    @printf("\nMixed Integer Programming (MIP): %d variables, %d entries, clique %s, order %d, level %d\n", n, (sum(Matrix(1*(A.!=0))) - sum(diag(Matrix(1*(A.!=0)))))/2 + sum(diag(Matrix(1*(A.!=0)))), uppercase(options["clique"]), options["ord"], options["level"])
+    OptVal, time, stat = solve_moment_manual(typ, obj, MomConst, LocConst, options);
+    return OptVal, time, stat
 end
-# vars = matread("A.mat");
-# A = vars["A"];
-# options = Dict();
-# options["duplicated"] = "on"; options["level"] = 0; options["clique"] = "on"; options["ord"] = 2;
-# solve_moment_mip(A, options)
+vars = matread("mip.mat");
+A = vars["L"];
+options = Dict();
+options["level"] = 2; options["clique"] = "off"; options["ord"] = 2; options["silent"] = true; options["quad"] = true;
+OptVal, running_time, status = solve_moment_mip(A, options);
 
 function solve_moment_auto(typ, var, obj, MomConst, LocConst, options)
     obj = pol2supp(obj, var);
@@ -264,14 +264,15 @@ function solve_moment_auto(typ, var, obj, MomConst, LocConst, options)
     OptVal, time, stat = solve_moment_manual(typ, obj, MomConst, LocConst, options);
     return OptVal, time, stat
 end
-# @polyvar x[1:3];
-# obj = 1.5 + x[1] + x[2]^2*x[3];
-# var = x; typ = "min";
+# @polyvar x[1:2];
+# obj = x[1]*x[2];
+# var = x; typ = "max";
 # MomConst = Array{Any}(undef, 1);
-# MomConst[1] = Dict(); MomConst[1]["basis"] = x;
+# MomConst[1] = Dict(); MomConst[1]["basis"] = x; MomConst[1]["ord"] = 2;
 # LocConst = Array{Any}(undef, 1);
-# LocConst[1] = Dict(); LocConst[1]["basis"] = x; LocConst[1]["pol"] = sum(x);
-# options = Dict();
+# LocConst[1] = Dict(); LocConst[1]["basis"] = x; LocConst[1]["pol"] = 1-sum(x.^2); LocConst[1]["typ"] = ">="; LocConst[1]["ord"] = 1;
+# options = Dict(); options["silent"] = true; options["quad"] = false;
+# OptVal, running_time, status = solve_moment_auto(typ, var, obj, MomConst, LocConst, options);
 
 function solve_moment_manual(typ, obj, MomConst, LocConst, options)
     running_time = Dict();
@@ -279,19 +280,22 @@ function solve_moment_manual(typ, obj, MomConst, LocConst, options)
     model = Model(with_optimizer(Mosek.Optimizer));
     NumMom = length(MomConst); NumLoc = length(LocConst); DimVar = size(obj, 2)-1;
     SetVars = Dict();
-    SetVars["var"] = @variable(model, [1:size(obj, 1), 1:1]);
+    SetVars["var"] = Array{GenericAffExpr{Float64,VariableRef},2}(undef, size(obj, 1), 1);
+    SetVars["var"][:] = @variable(model, x[1:size(obj, 1), 1:1]);
     SetVars["supp"] = obj[:, 2:DimVar+1];
     turn = "off";
     for i = 1:size(obj, 1)
         if isequal(obj[i, 2:DimVar+1]', zeros(1, DimVar))
-            @constraints(model, begin
-                SetVars["var"][i] == 1
-            end)
+            SetVars["var"][i] = 1;
+            # @constraints(model, begin
+            #     SetVars["var"][i] .== 1
+            # end)
             turn = "on";
             break
         end
     end
-    if maximum(sum(obj[:, 2:DimVar+1], dims = 2)) > 2
+    if isequal(options["quad"], false)
+    # if maximum(sum(obj[:, 2:DimVar+1], dims = 2)) > 2
         ObjQ = "no";
         objective = obj[:, 1]'*SetVars["var"][1:size(obj, 1), 1];
         if isequal(typ, "max")
@@ -299,15 +303,12 @@ function solve_moment_manual(typ, obj, MomConst, LocConst, options)
         elseif isequal(typ, "min")
             @objective(model, Min, objective);
         end
-    else
-        ObjQ = "yes";
     end
     for i = 1:NumMom
-        @printf("Building up moment matrices: %.2f%% (%d/%d)\n", i/NumMom*100, i, NumMom)
         if i == 1
-            # @printf("Building up moment matrices: %.2f%% (%d/%d)\n", i/NumMom*100, i, NumMom)
-            SetVars, MomMat = MomentMatrix(model, MomConst[i]["basis"], MomConst[i]["ord"], SetVars, ObjQuad = ObjQ);
-            if isequal(ObjQ, "yes")
+            @printf("Building up moment matrices: %.2f%% (%d/%d)", i/NumMom*100, i, NumMom);
+            SetVars, MomMat = MomentMatrix(model, MomConst[i]["basis"], MomConst[i]["ord"], SetVars, ObjQuad = options["quad"]); MomMat[1,1] = 1;
+            if isequal(options["quad"], true)
                 objective = obj[:, 1]'*SetVars["var"][1:size(obj, 1), 1];
                 if isequal(typ, "max")
                     @objective(model, Max, objective);
@@ -316,60 +317,67 @@ function solve_moment_manual(typ, obj, MomConst, LocConst, options)
                 end
             end
         else
-            # s1 = string(floor(Int64, (i-1)/NumMom*100)); s2 = string(i-1); s3 = string(NumMom);
-            # backstr = string(repeat("\b", 9+length([s1,s2,s3])));
-            # @printf("%s%.2f%% (%d/%d)\n", backstr, i/NumMom*100, i, NumMom)
-            SetVars, MomMat = MomentMatrix(model, MomConst[i]["basis"], MomConst[i]["ord"], SetVars, ObjQuad = "no");
+            s1 = string(floor(Int64, (i-1)/NumMom*100)); s2 = string(i-1); s3 = string(NumMom);
+            backstr = repeat("\b", 8+length(string(s1, s2, s3)));
+            @printf("%s%.2f%% (%d/%d)", backstr, i/NumMom*100, i, NumMom);
+            SetVars, MomMat = MomentMatrix(model, MomConst[i]["basis"], MomConst[i]["ord"], SetVars, ObjQuad = false); MomMat[1,1] = 1;
         end
-        @constraints(model, begin
-            MomMat in PSDCone()
-        end)
+        # @printf("Building up moment matrices: %.2f%% (%d/%d)\n", i/NumMom*100, i, NumMom)
+        @constraint(model, MomMat in PSDCone())
         if isequal(turn, "off")
             for j = 1:size(SetVars["supp"], 1)
                 if isequal(SetVars["supp"][j,:]', zeros(1, DimVar))
-                    @constraints(model, begin
-                        SetVars["var"][j] == 1
-                    end)
+                    SetVars["var"][j] = 1;
+                    # @constraints(model, begin
+                    #     SetVars["var"][j] == 1
+                    # end)
                     turn = "on";
                     break
                 end
             end
         end
     end
+    @printf("\n")
     for i = 1:NumLoc
-        @printf("Building up localization matrices: %.2f%% (%d/%d)\n", i/NumLoc*100, i, NumLoc)
-        # if i == 1
-        #     fprintf('Building up localization matrices: %.2f%% (%d/%d)\n', i/NumLoc*100, i, NumLoc)
-        # else
-        #     s1 = num2str(floor((i-1)/NumLoc*100)); s2 = num2str(i-1); s3 = num2str(NumLoc);
-        #     fprintf([repmat('\b', 1, 9+length([s1,s2,s3])), '%.2f%% (%d/%d)\n'], i/NumLoc*100, i, NumLoc)
-        # end
+        if i == 1
+            @printf("Building up localization matrices: %.2f%% (%d/%d)", i/NumMom*100, i, NumMom);
+        else
+            s1 = string(floor(Int64, (i-1)/NumLoc*100)); s2 = string(i-1); s3 = string(NumLoc);
+            backstr = repeat("\b", 8+length(string(s1, s2, s3)));
+            @printf("%s%.2f%% (%d/%d)", backstr, i/NumLoc*100, i, NumLoc);
+        end
         SetVars, LocMat = LocalizationMatrix(model, LocConst[i]["pol"], LocConst[i]["basis"], LocConst[i]["ord"], SetVars);
+        # @printf("Building up localization matrices: %.2f%% (%d/%d)\n", i/NumLoc*100, i, NumLoc)
         if isequal(LocConst[i]["typ"], ">=")
-            @constraints(model, begin
-                LocMat in PSDCone()
-            end)
-        elseif isequal(LocConst[i]["typ"], "<=")
-            @constraints(model, begin
-                -LocMat in PSDCone()
-            end)
-        elseif isequal(LocConst[i]["typ"], "==")
-            @constraints(model, begin
-                -LocMat .== 0
-            end)
-        end
-        if isequal(turn, "off")
-            for j = 1:size(SetVars["supp"], 1)
-                if isequal(SetVars["supp"][j,:]', zeros(1, DimVar))
-                    @constraints(model, begin
-                        SetVars["var"][j] == 1
-                    end)
-                    turn = "on";
-                    break
-                end
+            if size(LocMat, 1) == 1
+                @constraint(model, LocMat .>= 0)
+            elseif size(LocMat, 1) > 1
+                @constraint(model, LocMat in PSDCone())
             end
+        elseif isequal(LocConst[i]["typ"], "<=")
+            if size(LocMat, 1) == 1
+                @constraint(model, LocMat .<= 0)
+            elseif size(LocMat, 1) > 1
+                @constraint(model, -LocMat in PSDCone())
+            end
+        elseif isequal(LocConst[i]["typ"], "==")
+            @constraint(model, LocMat .== 0)
         end
+        # if isequal(turn, "off")
+        #     for j = 1:size(SetVars["supp"], 1)
+        #         if isequal(SetVars["supp"][j,:]', zeros(1, DimVar))
+        #             @constraints(model, begin
+        #                 SetVars["var"][j] == 1
+        #             end)
+        #             println("Aha")
+        #             turn = "on";
+        #             break
+        #         end
+        #     end
+        # end
     end
+    @printf("\n")
+    # println(objective)
     running_time["model"] = time() - start;
     @printf("Problem type: %s\n", uppercase(typ))
     @printf("%d moment matrices, %d localization matrices, %d variables, %d constraints\n", NumMom, NumLoc, length(SetVars["var"]), NumMom+NumLoc)
@@ -380,25 +388,28 @@ function solve_moment_manual(typ, obj, MomConst, LocConst, options)
     running_time["solv"] = solve_time(model);
     OptVal = objective_value(model);
     status = termination_status(model);
-    if status == MOI.OPTIMAL
-        @printf("The problem is successfully solved! Optimal value is: %.2f\n", OptVal)
-    else
-        @printf("The solver encountered some issues: ")
-        println(termination_status(model))
-    end
-    @printf("Total running time is: %.2f seconds (modeling time: %.2f seconds, solver time: %.2f seconds)\n", running_time["model"] + running_time["solv"], running_time["model"], running_time["solv"])
+    @printf("Solution is: %.2f, ", OptVal)
+    @printf("solver status is: "); println(termination_status(model))
+    # if status == MOI.OPTIMAL
+    #     @printf("The problem is successfully solved! Optimal value is: %.2f\n", OptVal)
+    # else
+    #     @printf("The solver encountered some issues: ")
+    #     println(termination_status(model))
+    # end
+    @printf("Total running time is: %.2f seconds (modeling time: %.2f seconds, solving time: %.2f seconds)\n", running_time["model"] + running_time["solv"], running_time["model"], running_time["solv"])
+    # println(value.(SetVars["var"]))
     return OptVal, running_time, status
 end
-# typ = "min"; obj = [0 0 0; 0 1 0; 0 0 1; 0 2 0; 1 1 1; 0 0 2];
+# typ = "max"; obj = [1 1 1];
 # options = Dict();
-# options["level"] = 0; options["clique"] = "on"; options["silent"] = true;
+# options["silent"] = true; options["quad"] = false;
 # MomConst = Array{Any}(undef, 1);
 # MomConst[1] = Dict();
 # MomConst[1]["basis"] = [1 0; 0 1];
 # MomConst[1]["ord"] = 2;
 # LocConst = Array{Any}(undef, 1);
 # LocConst[1] = Dict();
-# LocConst[1]["basis"] = [1 0; 0 1]; 
+# LocConst[1]["basis"] = [1 0; 0 1];
 # LocConst[1]["pol"] = [1 0 0; -1 2 0; -1 0 2];
 # LocConst[1]["typ"] = ">=";
 # LocConst[1]["ord"] = 1;

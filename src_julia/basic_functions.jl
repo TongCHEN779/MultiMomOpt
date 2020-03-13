@@ -124,14 +124,14 @@ end
 # pol = 1.5 + x[1] + x[2]^2*x[3];
 # supp = pol2supp(pol, x);
 
-function MomentMatrix(model, basis, order, SetVars; ObjQuad = "yes")
+function MomentMatrix(model, basis, order, SetVars; ObjQuad = true)
     n = size(basis, 1);
     if order == 1
         vars = SetVars;
         E = sparse([zeros(1+n, n-1) [2 zeros(1,n); ones(n,1) I(n)]]);
-        matrix = @variable(model, [1:n+1, 1:n+1]);
+        matrix = Array{GenericAffExpr{Float64,VariableRef},2}(undef, n+1, n+1); #@variable(model, [1:n+1, 1:n+1]);
         for i = 1:n+1
-            if isequal(ObjQuad, "no")
+            if isequal(ObjQuad, false)
                 for j = i:n+1
                     new = 1;
                     for k = 1:length(vars["var"])
@@ -148,7 +148,7 @@ function MomentMatrix(model, basis, order, SetVars; ObjQuad = "yes")
                         vars["supp"] = vcat(vars["supp"], E[j-i+1, n-i+2:2*n-i+1]');
                     end
                 end
-            elseif isequal(ObjQuad, "yes")
+            elseif isequal(ObjQuad, true) # objective support must be set in matrix order (not lexicographical order)
                 # @printf("%d\n", i)
                 matrix[i:n+1, i] = vars["var"][floor(Int64, (2*n+4-i)*(i-1)/2 + 1):floor(Int64, (2*n+3-i)*i/2)];
                 matrix[i, i:n+1] = vars["var"][floor(Int64, (2*n+4-i)*(i-1)/2 + 1):floor(Int64, (2*n+3-i)*i/2)];
@@ -156,12 +156,12 @@ function MomentMatrix(model, basis, order, SetVars; ObjQuad = "yes")
         end
     elseif order == 2 && n <= 20
         m1 = binomial(n+2*1, 2*1); m2 = binomial(n+2*2, 2*2);
-        B = get_basis(n, 2*2);
+        B = get_basis(n, 2*2)*basis;
         file = matopen("Moment_and_Localization_Matrices.mat");
         matrix_temp = read(file, "moment_$(n)_2");
         close(file);
         matrix = spzeros(m1, m1);
-        if isequal(ObjQuad, "yes")
+        if isequal(ObjQuad, true)
             vars = SetVars;
             for t = 1:m1
                 idx = 0;
@@ -178,10 +178,10 @@ function MomentMatrix(model, basis, order, SetVars; ObjQuad = "yes")
                 # @printf("%d\n", t)
                 vars["var"] = vcat(vars["var"], @variable(model, [1:1, 1:1]));
                 vars["supp"] = vcat(vars["supp"], B[t,:]');
-                matrix = matrix + matrix_temp[t]*vars["var"][t]
+                matrix = matrix + matrix_temp[t]*vars["var"][length(vars["var"])]
             end
             matrix = Matrix(matrix);
-        elseif isequal(ObjQuad, "no")
+        elseif isequal(ObjQuad, false)
             vars = SetVars;
             for t = 1:m2
                 idx = 0; new = 1;
@@ -197,7 +197,7 @@ function MomentMatrix(model, basis, order, SetVars; ObjQuad = "yes")
                 elseif new == 1
                     vars["var"] = vcat(vars["var"], @variable(model, [1:1, 1:1]));
                     vars["supp"] = vcat(vars["supp"], B[t,:]');
-                    matrix = matrix + matrix_temp[t]*vars["var"][t]
+                    matrix = matrix + matrix_temp[t]*vars["var"][length(vars["var"])]
                 end
             end
             matrix = Matrix(matrix);
@@ -221,25 +221,25 @@ function MomentMatrix(model, basis, order, SetVars; ObjQuad = "yes")
         #     end
         # end
         # matrix = Matrix(matrix);
-    elseif (order == 2 && n > 20) || order > 3
+    elseif (order == 2 && n > 20) || order >= 3
         pol = [1 zeros(1, size(basis,2))];
         vars, matrix = LocalizationMatrix(model, pol, basis, order, SetVars);
     end
     return vars, matrix
 end
 # start = time();
-# n = 10; order = 2; num = binomial(n+2*(order-1), 2*(order-1));
-# basis = I(n); ObjQuad = "yes";
+# n = 1; order = 2; num = binomial(20+2, 2);
+# basis = [1 zeros(1,19)];
 # SetVars = Dict();
 # model = Model(with_optimizer(Mosek.Optimizer));
-# SetVars["var"] = @variable(model, [1:num, 1:1]);
-# SetVars["supp"] = get_basis(n,2*(order-1));length(SetVars["var"])
-# vars, matrix = MomentMatrix(model, basis, order, SetVars, ObjQuad = "yes");
+# SetVars["var"] = @variable(model, [1:num, 1:1]);;
+# SetVars["supp"] = get_basis(20,2);
+# vars, matrix = MomentMatrix(model, basis, order, SetVars, ObjQuad = "no");
 # elapsed = time() - start;
 
 function LocalizationMatrix(model, pol, basis, order, SetVars)
     n = size(basis, 1);
-    B = get_basis(n, order); s = size(B,1); C = B*basis;
+    B = get_basis(n, order)*basis; s = size(B,1);
     matrix = zeros(s,s);
     de = size(pol, 1);
     vars = SetVars;
@@ -248,7 +248,7 @@ function LocalizationMatrix(model, pol, basis, order, SetVars)
             for k = 1:de
                 new = 1;
                 for z = 1:length(vars["var"])
-                    if isequal(vars["supp"][z, :], pol[k, 2:end] + C[i, :] + C[j, :])
+                    if isequal(vars["supp"][z, :], pol[k, 2:end] + B[i, :] + B[j, :])
                         # @printf("%d %d %d\n", i,j,z)
                         E = zeros(s,s); E[i,j] = 1; E[j,i] = 1; E = sparse(E);
                         matrix = matrix + pol[k,1]*vars["var"][z]*E;
@@ -258,7 +258,7 @@ function LocalizationMatrix(model, pol, basis, order, SetVars)
                 end
                 if new == 1
                     vars["var"] = vcat(vars["var"], @variable(model, [1:1, 1:1]));
-                    vars["supp"] = vcat(vars["supp"], sparse(pol[k, 2:end] + C[i, :] + C[j, :])');
+                    vars["supp"] = vcat(vars["supp"], sparse(pol[k, 2:end] + B[i, :] + B[j, :])');
                     E = zeros(s,s); E[i,j] = 1; E[j,i] = 1; E = sparse(E);
                     matrix = matrix + pol[k,1]*vars["var"][length(vars["var"])]*E;
                 end
@@ -268,12 +268,12 @@ function LocalizationMatrix(model, pol, basis, order, SetVars)
     return vars, matrix
 end
 # start = time();
-# n = 10; order = 2; num = binomial(n+2*order, 2*order);
-# basis = I(n);
-# pol = [1 zeros(1, size(basis,2))];
+# n = 2; order = 1; num = binomial(n+2*order+2, 2*order+2);
+# basis = [1 0];
+# pol = [1 1 0; -1 2 0];
 # SetVars = Dict();
 # model = Model(with_optimizer(Mosek.Optimizer));
-# SetVars["var"] = @variable(model, [1:num, 1:1]);
-# SetVars["supp"] = get_basis(n, 2*order);
+# SetVars["var"] = @variable(model, y[1:num, 1:1]);
+# SetVars["supp"] = get_basis(n, 2*order+2);
 # vars, matrix = LocalizationMatrix(model, pol, basis, order, SetVars);
 # elapsed = time() - start;
