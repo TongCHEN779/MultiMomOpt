@@ -306,8 +306,8 @@ function solve_moment_manual(typ, obj, MomConst, LocConst, options)
     end
     for i = 1:NumMom
         if i == 1
-            @printf("Building up moment matrices: %.2f%% (%d/%d)", i/NumMom*100, i, NumMom);
             SetVars, MomMat = MomentMatrix(model, MomConst[i]["basis"], MomConst[i]["ord"], SetVars, ObjQuad = options["quad"]); MomMat[1,1] = 1;
+            @printf("Building up moment matrices: %.2f%% (%d/%d)", i/NumMom*100, i, NumMom);
             if isequal(options["quad"], true)
                 objective = obj[:, 1]'*SetVars["var"][1:size(obj, 1), 1];
                 if isequal(typ, "max")
@@ -317,10 +317,10 @@ function solve_moment_manual(typ, obj, MomConst, LocConst, options)
                 end
             end
         else
+            SetVars, MomMat = MomentMatrix(model, MomConst[i]["basis"], MomConst[i]["ord"], SetVars, ObjQuad = false); MomMat[1,1] = 1;
             s1 = string(floor(Int64, (i-1)/NumMom*100)); s2 = string(i-1); s3 = string(NumMom);
             backstr = repeat("\b", 8+length(string(s1, s2, s3)));
             @printf("%s%.2f%% (%d/%d)", backstr, i/NumMom*100, i, NumMom);
-            SetVars, MomMat = MomentMatrix(model, MomConst[i]["basis"], MomConst[i]["ord"], SetVars, ObjQuad = false); MomMat[1,1] = 1;
         end
         # @printf("Building up moment matrices: %.2f%% (%d/%d)\n", i/NumMom*100, i, NumMom)
         @constraint(model, MomMat in PSDCone())
@@ -339,6 +339,7 @@ function solve_moment_manual(typ, obj, MomConst, LocConst, options)
     end
     @printf("\n")
     for i = 1:NumLoc
+        SetVars, LocMat = LocalizationMatrix(model, LocConst[i]["pol"], LocConst[i]["basis"], LocConst[i]["ord"], SetVars);
         if i == 1
             @printf("Building up localization matrices: %.2f%% (%d/%d)", i/NumMom*100, i, NumMom);
         else
@@ -346,7 +347,6 @@ function solve_moment_manual(typ, obj, MomConst, LocConst, options)
             backstr = repeat("\b", 8+length(string(s1, s2, s3)));
             @printf("%s%.2f%% (%d/%d)", backstr, i/NumLoc*100, i, NumLoc);
         end
-        SetVars, LocMat = LocalizationMatrix(model, LocConst[i]["pol"], LocConst[i]["basis"], LocConst[i]["ord"], SetVars);
         # @printf("Building up localization matrices: %.2f%% (%d/%d)\n", i/NumLoc*100, i, NumLoc)
         if isequal(LocConst[i]["typ"], ">=")
             if size(LocMat, 1) == 1
