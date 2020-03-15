@@ -1,4 +1,4 @@
-module MultiMom
+module MultiMomOpt
 
 using JuMP
 using AMD
