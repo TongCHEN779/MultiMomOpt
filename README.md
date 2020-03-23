@@ -79,5 +79,17 @@ options["range"] = "global"; options["level"] = 6; options["clique"] = "off"; op
 OptVal, running_time, status = solve_moment_lip_one_layer(A, b, c, x00, eps, options);
 ```
 
+#### Robustness Certification problem
+##### Statement
+##### Usage
+```Julia
+using MultiMomOpt
+vars = matread("lip_test.mat");
+A = vars["A"]; b = vars["b"]; c = vars["c"]; x00 = vars["x00"]; eps = 0.1;
+options = Dict();
+options["range"] = "global"; options["level"] = 0; options["clique"] = "off"; options["ord"] = 2; options["silent"] = true; options["quad"] = true;
+OptVal, running_time, status = solve_moment_cert(A, b, c, x00, eps, options);
+```
+
 ## References
-The Lipschitz Constant Estimation problem is referred to [Polynomial Optimization for Bounding Lipschitz Constants of Deep Networks](https://arxiv.org/abs/2002.03657). For more information, contact me: tchen@laas.fr.
+The Lipschitz Constant Estimation problem is referred to [Polynomial Optimization for Bounding Lipschitz Constants of Deep Networks](https://arxiv.org/abs/2002.03657). The Lipschitz Constant Estimation problem is referred to [Semidefinite relaxations for certifying robustness to adversarial examples](https://arxiv.org/abs/1811.01057). For more information, contact me: tchen@laas.fr.

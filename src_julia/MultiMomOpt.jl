@@ -16,5 +16,6 @@ export chordal_extension, get_basis, basis2supp, pol2supp, MomentMatrix, Localiz
 
 include("basic_functions.jl")
 include("solve_moment.jl")
+include("solve_moment_examples.jl")
 
 end
