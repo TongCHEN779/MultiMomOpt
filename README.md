@@ -92,4 +92,4 @@ OptVal, running_time, status = solve_moment_cert(A, b, c, x00, eps, options);
 ```
 
 ## References
-The Lipschitz Constant Estimation problem is referred to [Polynomial Optimization for Bounding Lipschitz Constants of Deep Networks](https://arxiv.org/abs/2002.03657). The Lipschitz Constant Estimation problem is referred to [Semidefinite relaxations for certifying robustness to adversarial examples](https://arxiv.org/abs/1811.01057). For more information, contact me: tchen@laas.fr.
+The Lipschitz Constant Estimation problem is referred to [Polynomial Optimization for Bounding Lipschitz Constants of Deep Networks](https://arxiv.org/abs/2002.03657). The Robustness Certification problem is referred to [Semidefinite relaxations for certifying robustness to adversarial examples](https://arxiv.org/abs/1811.01057). For more information, contact me: tchen@laas.fr.
