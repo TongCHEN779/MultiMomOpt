@@ -1,10 +1,10 @@
 # MultiMomOpt
-Multi-order moment problem based on Lasserre's hierarchy
+Multi-order and sub-level hierarchy based on standard Lasserre's hierarchy
 
 ## Matlab version
 
 ## Julia version
-Dependencies: JuMP, AMD, LinearAlgebra, MAT, SparseArrays, LightGraphs, GraphPlot, DynamicPolynomials, MosekTools, Printf, TSSOS
+Dependencies: JuMP, AMD, LinearAlgebra, MAT, SparseArrays, LightGraphs, GraphPlot, DynamicPolynomials, MosekTools, Printf, TSSOS, Dualization, Random
 
 ### Usage
 Maximize x1*x2, subject to x1^2+x2^2<=1.
@@ -43,7 +43,7 @@ OptVal, running_time, status = solve_moment_auto(typ, var, obj, MomConst, LocCon
 ```
 
 ### Examples
-#### MAX-CUT problem
+#### MAXCUT problem
 ##### Statement
 ##### Usage
 ```Julia
@@ -53,6 +53,18 @@ A = vars["A"]; W = ones(size(A, 1), size(A, 1));
 options = Dict();
 options["level"] = 3; options["clique"] = "off"; options["ord"] = 2; options["silent"] = true; options["quad"] = true;
 OptVal, running_time, status = solve_moment_maxcut(A, W, options)
+```
+
+#### MAX-CLIQUE problem
+##### Statement
+##### Usage
+```Julia
+using MultiMomOpt
+vars = matread("mac_5.mat");
+A = vars["A"];
+options = Dict();
+options["level"] = 3; options["clique"] = "off"; options["ord"] = 2; options["silent"] = true; options["quad"] = true;
+OptVal, running_time, status = solve_moment_mac(A, options)
 ```
 
 #### Mixed Integer Programming (MIP)
@@ -65,6 +77,18 @@ A = vars["L"];
 options = Dict();
 options["level"] = 15; options["clique"] = "off"; options["ord"] = 2; options["silent"] = true; options["quad"] = true;
 OptVal, running_time, status = solve_moment_mip(A, options);
+```
+
+#### QCQP problem
+##### Statement
+##### Usage
+```Julia
+using MultiMomOpt
+vars = matread("qcqp_5_1.mat");
+A = vars["A"]; b = vars["b"];
+options = Dict();
+options["level"] = 3; options["clique"] = "off"; options["ord"] = 2; options["silent"] = true; options["quad"] = true;
+OptVal, running_time, status = solve_moment_qcqp(A, b, options)
 ```
 
 #### Lipschitz Constant Estimation problem (one hidden layer)
@@ -92,4 +116,4 @@ OptVal, running_time, status = solve_moment_cert(A, b, c, x00, eps, options);
 ```
 
 ## References
-The Lipschitz Constant Estimation problem is referred to [Polynomial Optimization for Bounding Lipschitz Constants of Deep Networks](https://arxiv.org/abs/2002.03657). The Robustness Certification problem is referred to [Semidefinite relaxations for certifying robustness to adversarial examples](https://arxiv.org/abs/1811.01057). For more information, contact me: tchen@laas.fr.
+The Lipschitz Constant Estimation problem is referred to [Semialgebraic Optimization for Lipschitz Constants of ReLU Networks](https://arxiv.org/abs/2002.03657). The Robustness Certification problem is referred to [Semidefinite relaxations for certifying robustness to adversarial examples](https://arxiv.org/abs/1811.01057). For more information, contact me: tchen@laas.fr.
