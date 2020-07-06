@@ -1,6 +1,6 @@
-## Ellipsoid Problem
+# Ellipsoid Problem
 
-Given an ellipsoid $E_0 = \{x \in \mathbb{R}^p: -x^T Q_0 x + b_0^T x + c_0 \ge 0, Q_0 \in \mathbb{S}^p_+, b_0 \in \mathbb{R}^p, c_0 \in \mathbb{R}\}$, a map $\varphi: \mathbb{R}^p \rightarrow \mathbb{R}^p, x \mapsto \max\{0,Px + \xi\}$. The goal is to find an ellipsoid $E = \{x \in \mathbb{R}^p: -x^T Q x + b^T x + c \ge 0, Q \in \mathbb{S}^p_+, b \in \mathbb{R}^p, c \in \mathbb{R}\}$ such that $\varphi (E_0) \subseteq E$. 
+Given an ellipsoid $E_0 = \{x \in \mathbb{R}^p: -x^T Q_0 x + b_0^T x + c_0 \ge 0, Q_0 \in \mathbb{S}^p_+, b_0 \in \mathbb{R}^p, c_0 \in \mathbb{R}\}$, a map $\varphi: \mathbb{R}^p \rightarrow \mathbb{R}^p, x \mapsto \max\{0,Px + \xi\}$. The goal is to find an ellipsoid $E = \{x \in \mathbb{R}^p: -x^T Q x + b^T x + c \ge 0, Q \in \mathbb{S}^p_+, b \in \mathbb{R}^p, c \in \mathbb{R}\}$ such that $\varphi (E_0) \subseteq E$. For the following discussion, the product between two vectors means element-wise product, i.e. $ab := \sum_{i = 1}^n a_i b_i$ for $a, b \in \mathbb{R}^n$.
 
 It is easy to see that for all $x \in \mathbb{R}^p$ such that $-x^T Q_0 x + b_0^T x + c_0 \ge 0$, we have $-\max\{0,Px + \xi\}^T Q \max\{0,Px + \xi\} + b^T \max\{0,Px + \xi\} + c \ge 0$, which is equivalent to $-z^T Q z + b^T z + c \ge 0, z(z-Px - \xi) = 0, z \ge 0, z \ge Px + \xi$.
 
@@ -13,15 +13,15 @@ z(z-Px - \xi) = 0, z \ge 0, z \ge Px + \xi \end{cases}
 \end{align*}
 By maximizing the trace of $Q$, we can use Julia to solve this POP. For simplicity, let $Q_0 = \text{diag}\{1,1\}, b_0 = (0,0)^T, c_0 = 0$.
 
-The SOS problem is
+The $d$-th order SOS problem is
 \begin{align*}
 \max & \quad \det (Q) ^{\frac{1}{p}} \\
 \text{s.t.} & \quad \begin{cases}
--z^T Q z + b^T z + c = \sigma_0 (x, z) +  \sigma_1 (x, z) (-x^T Q_0 x + b_0^T x + c_0) + \tau (x,z) (z(z-Px - \xi)) + \sigma_2 (x,z) z + \sigma_3 (x,z) (z - Px - \xi) \\
+-z^T Q z + b^T z + c = \sigma_0 (x, z) +  \sigma_1 (x, z) (-x^T Q_0 x + b_0^T x + c_0) + \tau (x,z)^T (z(z-Px - \xi)) + \sigma_2 (x,z)^T z + \sigma_3 (x,z)^T (z - Px - \xi) \\
 \begin{pmatrix}
 Q & \frac{1}{2} b \\
 \frac{1}{2} b^T & 1-c
-\end{pmatrix} \succeq 0, \sigma_i \text{ SOSs}, \tau \text{ polynomial}
+\end{pmatrix} \succeq 0, \sigma_1 \text{ SOS}; \sigma_i = [\sigma_i^1, \ldots, \sigma_i^p]^T \text{ SOSs for } i = 2,3; \tau \text{ polynomial}
 \end{cases}
 \end{align*}
 
@@ -29,42 +29,89 @@ An alternative:
 \begin{align*}
 \max & \quad \det (Q) ^{\frac{1}{p}} \\
 \text{s.t.} & \quad \begin{cases}
--(\frac{z+Px+\xi}{2})^T Q (\frac{z+Px+\xi}{2}) + b^T (\frac{z+Px+\xi}{2}) + c = \sigma_0 (x, z) +  \sigma_1 (x, z) (-x^T Q_0 x + b_0^T x + c_0) + \tau (x,z) (z^2-(Px + \xi)^2) + \sigma_2 (x,z) z \\
+-(\frac{z+Px+\xi}{2})^T Q (\frac{z+Px+\xi}{2}) + b^T (\frac{z+Px+\xi}{2}) + c = \sigma_0 (x, z) +  \sigma_1 (x, z) (-x^T Q_0 x + b_0^T x + c_0) + \tau (x,z)^T (z^2-(Px + \xi)^2) + \sigma_2 (x,z)^T z \\
 \begin{pmatrix}
 Q & \frac{1}{2} b \\
 \frac{1}{2} b^T & 1-c
-\end{pmatrix} \succeq 0, \sigma_i \text{ SOSs}, \tau \text{ polynomial}
+\end{pmatrix} \succeq 0, \sigma_1 \text{ SOS}; \sigma_2 = [\sigma_2^1, \ldots, \sigma_2^p]^T \text{ SOSs}; \tau \text{ polynomial}
 \end{cases}
 \end{align*}
 
-## Morari v.s. Shor
-### QC for hyper-rectangle
+Instead of propagating the ellipsoids layer by layer, we can also estimate the final outer ellipsoid directly, which leads to the following SOS problem:
+\begin{align*}
+\max & \quad \det (Q) ^{\frac{1}{p}} \\
+\text{s.t.} & \quad \begin{cases}
+    -z_l^T Q z_l + b^T z_l + c = \sigma_0 (x, x_{1 \ldots l}, z_{1 \ldots l}) +  \sigma_1 (x, x_{1 \ldots l}, z_{1 \ldots l}) (-x^T Q_0 x + b_0^T x + c_0) \\
+\qquad \qquad + \tau_1 (x, x_{1 \ldots l}, z_{1 \ldots l})^T (z_1(z_1-P_1 x - \xi_1)) + \sigma_{1,1} (x, x_{1 \ldots l}, z_{1 \ldots l})^T z_1 + \sigma_{1,2} (x, x_{1 \ldots l}, z_{1 \ldots l})^T (z_1 - P_1 x - \xi_1) \\
+\qquad \qquad + \tau_2 (x, x_{1 \ldots l}, z_{1 \ldots l})^T (z_2(z_2-P_2 x_1 - \xi_2)) + \sigma_{2,1} (x, x_{1 \ldots l}, z_{1 \ldots l})^T z_2 + \sigma_{2,2} (x, x_{1 \ldots l}, z_{1 \ldots l})^T (z_2 - P_2 x_1 - \xi_2) \\
+\qquad \qquad + \ldots \\
+\qquad \qquad + \tau_l (x, x_{1 \ldots l}, z_{1 \ldots l})^T (z_l(z_l-P_l x_{l-1} - \xi_l)) + \sigma_{l,1} (x, x_{1 \ldots l}, z_{1 \ldots l})^T z_l + \sigma_{l,2} (x, x_{1 \ldots l}, z_{1 \ldots l})^T (z_l - P_l x_{l-1} - \xi_l) \\
+\begin{pmatrix}
+Q & \frac{1}{2} b \\
+\frac{1}{2} b^T & 1-c
+\end{pmatrix} \succeq 0, \sigma_0, \sigma_1, \sigma_{i,j} = [\sigma_{i,j}^1, \ldots, \sigma_{i,j}^{p_i}]^T \text{ SOSs}, \tau_i = [\tau_i^1, \ldots, \tau_i^{p_i}]^T \text{ polynomials}
+\end{cases}
+\end{align*}
+An alternative:
+\begin{align*}
+\max & \quad \det (Q) ^{\frac{1}{p}} \\
+\text{s.t.} & \quad \begin{cases}
+    -z_l^T Q z_l + b^T z_l + c = \sigma_0 (x, x_{1 \ldots l}, z_{1 \ldots l}) +  \sigma_1 (x, x_{1 \ldots l}, z_{1 \ldots l}) (-x^T Q_0 x + b_0^T x + c_0) \\
+\qquad \qquad + \tau_1 (x, x_{1 \ldots l}, z_{1 \ldots l})^T (z_1(z_1-P_1 x - \xi_1)) + \sigma_{1,1} (x, x_{1 \ldots l}, z_{1 \ldots l})^T z_1 + \sigma_{1,2} (x, x_{1 \ldots l}, z_{1 \ldots l})^T (z_1 - P_1 x - \xi_1) \\
+\qquad \qquad + \tau_2 (x, x_{1 \ldots l}, z_{1 \ldots l})^T (z_2(z_2-P_2 x_1 - \xi_2)) + \sigma_{2,1} (x, x_{1 \ldots l}, z_{1 \ldots l})^T z_2 + \sigma_{2,2} (x, x_{1 \ldots l}, z_{1 \ldots l})^T (z_2 - P_2 x_1 - \xi_2) \\
+\qquad \qquad + \ldots \\
+\qquad \qquad + \tau_l (x, x_{1 \ldots l}, z_{1 \ldots l})^T (z_l(z_l-P_l x_{l-1} - \xi_l)) + \sigma_{l,1} (x, x_{1 \ldots l}, z_{1 \ldots l})^T z_l + \sigma_{l,2} (x, x_{1 \ldots l}, z_{1 \ldots l})^T (z_l - P_l x_{l-1} - \xi_l) \\
+\begin{pmatrix}
+Q & \frac{1}{2} b \\
+\frac{1}{2} b^T & 1-c
+\end{pmatrix} \succeq 0, \sigma_0, \sigma_1, \sigma_{i,j} = [\sigma_{i,j}^1, \ldots, \sigma_{i,j}^{p_i}]^T \text{ SOSs}, \tau_i = [\tau_i^1, \ldots, \tau_i^{p_i}]^T \text{ polynomials}
+\end{cases}
+\end{align*}
+
+The goal is to beat Morari, by applying multi-order and sublevel hierarchy either to the propagation SOS problem or the single-shot SOS problem. We use a heuristic $s$-sublevel (choose the sublevels by order) as follows: $\{x^1, \ldots, x^s\}$ for input ellipsoid $-x^T Q_0 x + b_0^T x + c_0$, $\{x_{i-1}^1, \ldots, x_{i-1}^{s}, z_i^j\}$ for ReLU constraints $z_i^j (z_i^j-P_i^{j,:} x_{i-1} - \xi_i^j)$, $z_i^j-P_i^{j,:} x_{i-1} - \xi_i^j$ and $z_i^j$. The 2nd-order $s$-sublevel hierarchy for ellipsoid problem reads as follows:
+\begin{align*}
+\max & \quad \det (Q) ^{\frac{1}{p}} \\
+\text{s.t.} & \quad \begin{cases}
+    -z_l^T Q z_l + b^T z_l + c = \sigma_0 (x, x_{1 \ldots l}, z_{1 \ldots l}) + \sigma_{0,0} (x^{1\ldots s}) + \sigma_1 (x^{1\ldots s}) (-x^T Q_0 x + b_0^T x + c_0) \\
+\qquad \qquad + \sigma_{1,0} (x^{1\ldots s}, z_1)^T \mathbf{1}_{p_1} + \tau_1 (x^{1\ldots s}, z_1)^T (z_1(z_1-P_1 x - \xi_1)) + \sigma_{1,1} (x^{1\ldots s}, z_1)^T z_1 + \sigma_{1,2} (x^{1\ldots s}, z_1)^T (z_1 - P_1 x - \xi_1) \\
+\qquad \qquad + \sigma_{2,0} (x_1^{1\ldots s}, z_2) \mathbf{1}_{p_2} + \tau_2 (x_1^{1\ldots s}, z_2)^T (z_2(z_2-P_2 x_1 - \xi_2)) + \sigma_{2,1} (x_1^{1\ldots s}, z_2)^T z_2 + \sigma_{2,2} (x_1^{1\ldots s}, z_2)^T (z_2 - P_2 x_1 - \xi_2) \\
+\qquad \qquad + \ldots \\
+\qquad \qquad + \sigma_{l,0} (x_{l-1}^{1\ldots s}, z_l) \mathbf{1}_{p_l} + \tau_l (x_{l-1}^{1\ldots s}, z_l)^T (z_l(z_l-P_l x_{l-1} - \xi_l)) + \sigma_{l,1} (x_{l-1}^{1\ldots s}, z_l)^T z_l + \sigma_{l,2} (x_{l-1}^{1\ldots s}, z_l)^T (z_l - P_l x_{l-1} - \xi_l) \\
+\begin{pmatrix}
+Q & \frac{1}{2} b \\
+\frac{1}{2} b^T & 1-c
+\end{pmatrix} \succeq 0, \sigma_0, \sigma_1, \sigma_{i,j} = [\sigma_{i,j}^1, \ldots, \sigma_{i,j}^{p_i}]^T \text{ SOSs}, \tau_i = [\tau_i^1, \ldots, \tau_i^{p_i}]^T \text{ polynomials}
+\end{cases}
+\end{align*}
+
+# Morari = Shor
+## QC for hyper-rectangle
 The hyper-rectangle $\mathcal{X} = \{x \in \mathbb{R}^d: \underline{x} \le x \le \overline{x}\}$ satisfies the QC defined by
 $$P = \begin{bmatrix}-(\Gamma+\Gamma^T) & \Gamma \underline{x} + \Gamma^T \overline{x} \\
 \underline{x}^T \Gamma^T + \overline{x}^T \Gamma & - \underline{x}^T \Gamma^T \overline{x} - \overline{x}^T \Gamma \underline{x} \end{bmatrix}$$
 where $\Gamma \in \mathbb{R}^{d\times d}, \Gamma_{ij} \ge 0 $ for all $i, j$. This is equivalent to say that
 $$\sum_{i,j} \Gamma_{ij} (x_i - \underline{x}_i) (\overline{x}_j - x_j) \ge 0$$
 
-### QC for ReLU function
+## QC for ReLU function
 The ReLU function $y=\max\{0, x\}$ satisfies the QC defined by
 $$Q = \begin{bmatrix}
-0 & T & -\nu \\
+\mathbf{0}_{d\times d} & T & -\nu \\
 T & -2T & \nu + \eta \\
 -\nu^T & \nu^T + \eta^T & 0
 \end{bmatrix}$$
 where $\eta, \nu \ge 0$ and $T \in \mathbb{S}^d_+$ given by
-$$T = \sum_{i = 1}^d \lambda_i e_i e_i^T + \sum_{i = 1}^{d-1} \sum_{j > i}^d \lambda_{ij} (e_i - e_j) (e_i - e_j)^T$$
+$$T = \sum_{i = 1}^d \lambda_i e_i e_i^T + \sum_{i < j} \lambda_{ij} (e_i - e_j) (e_i - e_j)^T$$
 with $\lambda_i \in \mathbb{R}$ and $\lambda_{ij} \ge 0$. This is equivalent to say that
-$$\sum_{i = 1}^d \lambda_i (y_i^2 - x_i y_i) + \nu_i (y_i - x_i) + \eta_i y_i - \sum_{i \ne j} \lambda_{ij} \big((y_j - y_i)^2 - (y_j - y_i)(x_j - x_i)\big) \ge 0$$
+$$\sum_{i = 1}^d 2 \lambda_i (x_i y_i - y_i^2) + \nu_i (y_i - x_i) + \eta_i y_i - \sum_{i < j} \lambda_{ij} \big((y_j - y_i)^2 - (y_j - y_i)(x_j - x_i)\big) \ge 0$$
 
-### QC for polytope
+## QC for polytope
 A polytope $\mathcal{X} = \{x\in \mathbb{R}^d : Ax \le b\}$ satisfies the QC defined by
 $$P = \begin{bmatrix}A^T \Gamma A & -A^T \Gamma b \\
 -b^T \Gamma A & b^T \Gamma b\end{bmatrix}$$
 where $\Gamma \in \mathbb{S}^d, \Gamma \ge 0$. This is equivalent to say that
 $$\sum_{i,j} \Gamma_{ij} (b_i - A_{i,:} x) (b_j - A_{j,:} x) \ge 0$$
 
-### QC for ellipsoid
+## QC for ellipsoid
 An ellipsoid $\mathcal{X} = \{x \in\mathbb{R}^d: ||Ax + b||_2 \le 1\}$ satisfies the QC defined by
 $$P = \mu \begin{bmatrix}
 -A^T A & -A^T b\\
@@ -72,13 +119,13 @@ $$P = \mu \begin{bmatrix}
 where $\mu \ge 0$. This is equivalent to say that
 $$\mu (1- ||Ax + b||_2^2) \ge 0$$
 
-### QC for polytopic reachable set
+## QC for polytopic reachable set
 A polytope $\mathcal{X} =\{x \in \mathbb{R}^d: Ax \le b\} = \cap_{i = 1}^d \{x \in \mathbb{R}^d: A_{i,:} x \le b_i\}$ satisfies the QC defined by
-$$S_i = \begin{bmatrix}0 & A_{i,:}^T \\ A_{i,:} & -2b_i\end{bmatrix}$$
+$$S_i = \begin{bmatrix}\mathbf{0}_{d\times d}& A_{i,:}^T \\ A_{i,:} & -2b_i\end{bmatrix}$$
 where $A$ (which determines the orientation of each facet of the polytope) is given, $b$ is decision variable. This is equivalent to say that
 $$2 A_{i,:} x - 2 b_i \le 0$$
 
-### QC for ellipsoidal reachable set
+## QC for ellipsoidal reachable set
 An ellipsoid $\mathcal{X} = \{x \in\mathbb{R}^d: ||Ax + b||_2 \le 1\}$ satisfies the QC defined by
 $$P = \begin{bmatrix}
 A^T A & A^T b\\
@@ -86,10 +133,49 @@ b^T A & b^T b - 1\end{bmatrix}$$
 where $A,b$ are decision variables. This is equivalent to say that 
 $$||Ax + b||_2^2 - 1 \le 0$$
 
-### Conclusion
+## Conclusion
 The first-order moment relaxation (Shor's relaxation) reads:
-$$-\sigma_0 (x, z) = z^T Q z - b^T z - c +  \sigma_1 (-x^T Q_0 x + b_0^T x + c_0) + \tau (z(z-Px - \xi)) + \sigma_2 z + \sigma_3 (z - Px - \xi) =: \begin{bmatrix}x\\z\\1\end{bmatrix}^T M \begin{bmatrix}x\\z\\1\end{bmatrix}$$
-where $M$ is the Gram matrix, $\sigma_0$ is an SOS of degree 2, $\sigma_1 \in \mathbb{R}_+, \tau \in \mathbb{R}^p, \sigma_2 \in \mathbb{R}^p_+, \sigma_3 \in \mathbb{R}^p_+$. Then Morari's method (applied to the ellipsoid problem) is essentially the following SDP problem:
+$$-\sigma_0 (x, z) = \underbrace{\overbrace{z^T Q z - b^T z - c}^{p_1(x,z)} + \overbrace{\sigma_1 (-x^T Q_0 x + b_0^T x + c_0)}^{p_2(x,z)} + \overbrace{\tau^T (z(z-Px - \xi))}^{p_3(x,z)} + \overbrace{\sigma_2^T z}^{p_4(x,z)} + \overbrace{\sigma_3^T (z - Px - \xi)}^{p_5(x,z)}}_{q(x,z)} =: \begin{bmatrix}x\\z\\1\end{bmatrix}^T M \begin{bmatrix}x\\z\\1\end{bmatrix}$$
+where $M$ is the Gram matrix of $q(x,z)$ with basis $(x^T,z^T,1)$, $\sigma_0$ is an SOS of degree 2, $\sigma_1 \in \mathbb{R}_+, \tau \in \mathbb{R}^{p_1}, \sigma_2 \in \mathbb{R}^{p_1}_+, \sigma_3 \in \mathbb{R}^{p_1}_+$. Precisely, $M = M_1 + M_2 + M_3 + M_4 + M_5$, where
+$$M_1 = \begin{bmatrix}
+\mathbf{0}_{p\times p} & \mathbf{0}_{p\times p_1} & \mathbf{0}_{p\times 1} \\
+\mathbf{0}_{p_1 \times p} & Q & -\frac{1}{2} b \\
+\mathbf{0}_{1 \times p} & -\frac{1}{2} b^T & -c \end{bmatrix}$$
+is the Gram matrix of polynomial $p_1(x,z) = z^T Q z - b^T z - c$ with basis $(x^T,z^T,1)$,
+$$M_2 = \sigma_1 \begin{bmatrix}
+-Q_0 & \mathbf{0}_{p\times p_1} & \frac{1}{2} b_0 \\
+\mathbf{0}_{p_1 \times p} & \mathbf{0}_{p_1 \times p_1} & \mathbf{0}_{p_1 \times 1} \\
+\frac{1}{2} b_0^T & \mathbf{0}_{1\times p_1} & c_0 \\
+\end{bmatrix}$$
+is the Gram matrix of polynomial $p_2(x,z) = \sigma_1 (-x^T Q_0 x + b_0^T x + c_0)$ with basis $(x^T,z^T,1)$,
+$$M_3 = \begin{bmatrix}
+\mathbf{0}_{p\times p} & -\frac{1}{2} P^T \text{diag}(\tau) & \mathbf{0}_{p\times 1} \\
+-\frac{1}{2} \text{diag}(\tau) P & \text{diag}(\tau) & -\frac{1}{2} (\tau \xi) \\
+\mathbf{0}_{1 \times p} & -\frac{1}{2} (\tau^T \xi^T) & 0
+\end{bmatrix}$$
+is the Gram matrix of polynomial $p_3(x,z) = \tau z(z-Px - \xi)$ with basis $(x^T,z^T,1)$,
+$$M_4 = \begin{bmatrix}
+\mathbf{0}_{p\times p} & \mathbf{0}_{p\times p_1} & \mathbf{0}_{p\times 1} \\
+\mathbf{0}_{p_1 \times p} & \mathbf{0}_{p_1 \times p_1} & \frac{1}{2} \sigma_2 \\
+\mathbf{0}_{1 \times p} & \frac{1}{2} \sigma_2^T & 0
+\end{bmatrix}$$
+is the Gram matrix of polynomial $p_4(x,z) = \sigma_2 z$ with basis $(x^T,z^T,1)$,
+$$M_5 = \begin{bmatrix}
+\mathbf{0}_{p\times p} & \mathbf{0}_{p\times p_1} & -\frac{1}{2} P^T \sigma_3 \\
+\mathbf{0}_{p_1 \times p} & \mathbf{0}_{p_1 \times p_1} & \frac{1}{2} \sigma_3 \\
+-\frac{1}{2} \sigma_3^T P & \frac{1}{2} \sigma_3^T & -\sigma_3^T \xi
+\end{bmatrix}$$
+is the Gram matrix of polynomial $p_5(x,z) = \sigma_3 (z - Px - \xi)$ with basis $(x^T,z^T,1)$.
+
+If we add the redundant constraints $(z_j - z_i)^2 - (z_j - z_i) (P_{j,:} x + \xi_j - P_{i,:} x - \xi_i) \le 0$ for $i<j$. Then we just need to add additional polynomials $-\sum_{i<j} \Lambda_{ij} ((z_j - z_i)^2 - (z_j - z_i) (P_{j,:} x + \xi_j - P_{i,:} x - \xi_i))$ with $\Lambda \ge 0$, correspondingly, add its Gram matrix $M_6$ to $M$:
+$$M_6 = \begin{bmatrix}
+\mathbf{0}_{p\times p} & \frac{1}{2} P^T T & \mathbf{0}_{p\times 1} \\
+\frac{1}{2} T P & -T & \frac{1}{2} T \xi \\
+\mathbf{0}_{1 \times p} & \frac{1}{2} \xi^T T & 0
+\end{bmatrix}$$
+with $T = \sum_{i<j} \Lambda_{ij} (\mathbf{e}_i - \mathbf{e}_j) (\mathbf{e}_i - \mathbf{e}_j)^T$ and $\mathbf{e}_i$ are the canonical basis in $\mathbb{R}^p$.
+
+Then Morari's method (applied to the ellipsoid problem) is essentially the following SDP problem:
 \begin{align*}
 \max & \quad \det (Q) ^{\frac{1}{p}} \\
 \text{s.t.} & \quad
@@ -99,8 +185,9 @@ Q & \frac{1}{2} b \\
 \frac{1}{2} b^T & 1-c
 \end{pmatrix} \succeq 0
 \end{align*}
+We can see that Morari's method is just a different reformulation of Shor's relaxation.
 
-## Theorem (Image of an Ellipsoid by an Affine Map)
+# Theorem (Image of an Ellipsoid by an Affine Map)
 Let $E = \{x \in \mathbb{R}^p: -x^T Q x + b^T x + c \ge 0, Q \in \mathbb{S}^p_+, b \in \mathbb{R}^p, c \in \mathbb{R}\}$ be an ellipsoid in $\mathbb{R}^p$. Define an affine map $\mathcal{A}: \mathbb{R}^p \rightarrow \mathbb{R}^q$, $x \mapsto z = Px+\xi$, where $P \in \mathbb{R}^{q \times p}, \xi \in \mathbb{R}^q$. Then the image of $E$ under $\mathcal{A}$ is:
 
 i) An ellipsoid in $\mathbb{R}^q$, if $\text{rank}(P) = q$;
@@ -148,8 +235,16 @@ function OuterApproximation(Q0, b0, c0, ord, P, ξ, method)
         X0 = monomials([x; z], 0:2*ord); σ0 = @variable(model, [1:1], Poly(X0))
         X1 = monomials([x; z], 0:2*(ord-1)); σ1 = @variable(model, [1:1], Poly(X1))
         obj = z'*Q*z.+b'*z.+c - σ0[1] - σ1[1] * (x'*Q0*x.+b0'*x.+c0)
+        Λ = @variable(model, [1:p2,1:p2], Symmetric)
+        for i = 1:p2-1
+            for j = i+1:p2
+                if i != j
+                    obj = obj + Λ[i,j]*((z[j] - z[i])^2 - (z[j] - z[i])*(P[j,:]'*x + ξ[j] - P[i,:]'*x - ξ[i]))
+                end
+            end
+        end
         @constraints(model, begin
-            σ0 .>= 0; σ1 .>= 0;
+            σ0 .>= 0; σ1 .>= 0; Λ .>= 0
         end)
         for i = 1:p2
             X2 = monomials([x; z], 0:2*(ord-1)); σ2 = @variable(model, [1:1], Poly(X2))
@@ -160,6 +255,8 @@ function OuterApproximation(Q0, b0, c0, ord, P, ξ, method)
                 σ3 .>= 0; σ4 .>= 0;
             end)
         end
+        # println("Shor:")
+        # println((-obj-σ0[1])[1])
         @constraint(model, obj .== 0)
     elseif isequal(method, "split")
         @polyvar x[1:p2] z[1:p2] lower_bound
@@ -178,8 +275,16 @@ function OuterApproximation(Q0, b0, c0, ord, P, ξ, method)
         X1 = monomials([x; z], 0:2*(ord-1)); σ1 = @variable(model, [1:1], Poly(X1))
         D = svd(P); Q0 = D.U*diagm(D.S)^(-1)*D.V'*Q0*D.V*diagm(D.S)^(-1)*D.U'; b0 = D.U*diagm(D.S)^(-1)*D.V'*b0; c0 = c0
         obj = z'*Q*z.+b'*z.+c - σ0[1] - σ1[1] * ((x-ξ)'*Q0*(x-ξ).+b0'*(x-ξ).+c0)
+        Λ = @variable(model, [1:p2,1:p2], Symmetric)
+        for i = 1:p2-1
+            for j = i+1:p2
+                if i != j
+                    obj = obj + Λ[i,j]*((z[j] - z[i])^2 - (z[j] - z[i])*(x[j] + ξ[j] - x[i] - ξ[i]))
+                end
+            end
+        end
         @constraints(model, begin
-            σ0 .>= 0; σ1 .>= 0;
+            σ0 .>= 0; σ1 .>= 0; Λ .>= 0
         end)
         for i = 1:p2
             X2 = monomials([x; z], 0:2*(ord-1)); σ2 = @variable(model, [1:1], Poly(X2))
@@ -219,7 +324,7 @@ function OuterApproximation(Q0, b0, c0, ord, P, ξ, method)
             end)
         end
         @constraint(model, obj .== 0)
-    elseif isequal(method, "heur-2")
+    elseif isequal(method, "hr-2")
         @polyvar x[1:p2] z[1:p2] lower_bound
         @variable(model, lower_bound)
         @objective(model, Max, lower_bound)
@@ -233,20 +338,28 @@ function OuterApproximation(Q0, b0, c0, ord, P, ξ, method)
             vect[:] in MOI.RootDetConeTriangle(p2)
         end)
         X0 = monomials([x; z], 0:2*1); σ0 = @variable(model, [1:1], Poly(X0))
-        X1 = monomials([x; z], 0:2*(ord-1)); σ1 = @variable(model, [1:1], Poly(X1))
-        D = svd(P); Q0 = D.U*diagm(D.S)^(-1)*D.V'*Q0*D.V*diagm(D.S)^(-1)*D.U'; b0 = D.U*diagm(D.S)^(-1)*D.V'*b0; c0 = c0
-        obj = z'*Q*z.+b'*z.+c - σ0[1] - σ1[1] * ((x-ξ)'*Q0*(x-ξ).+b0'*(x-ξ).+c0)
+        X01 = monomials(x, 0:2*ord); σ01 = @variable(model, [1:1], Poly(X01))
+        X1 = monomials(x, 0:2*(ord-1)); σ1 = @variable(model, [1:1], Poly(X1))
+        obj = z'*Q*z.+b'*z.+c - σ0[1] - σ01[1] - σ1[1] * (x'*Q0*x.+b0'*x.+c0)
+        Λ = @variable(model, [1:p2,1:p2], Symmetric)
+        for i = 1:p2-1
+            for j = i+1:p2
+                if i != j
+                    obj = obj + Λ[i,j]*((z[j] - z[i])^2 - (z[j] - z[i])*(P[j,:]'*x + ξ[j] - P[i,:]'*x - ξ[i]))
+                end
+            end
+        end
         @constraints(model, begin
-            σ0 .>= 0; σ1 .>= 0;
+            σ0 .>= 0; σ01 .>= 0; σ1 .>= 0; Λ .>= 0
         end)
         for i = 1:p2
-            X01 = monomials([x[i]; z[i]], 0:2*ord); σ01 = @variable(model, [1:1], Poly(X01))
+            X02 = monomials([x[i]; z[i]], 0:2*ord); σ02 = @variable(model, [1:1], Poly(X02))
             X2 = monomials([x[i]; z[i]], 0:2*(ord-1)); σ2 = @variable(model, [1:1], Poly(X2))
             X3 = monomials([x[i]; z[i]], 0:2*(ord-1)); σ3 = @variable(model, [1:1], Poly(X3))
             X4 = monomials([x[i]; z[i]], 0:2*(ord-1)); σ4 = @variable(model, [1:1], Poly(X4))
-            obj = obj - σ01[1] - σ2[1] * (z[i]*(z[i]-x[i])) - σ3[1] * z[i] - σ4[1] * (z[i]-x[i])
+            obj = obj - σ02[1] - σ2[1] * (z[i]*(z[i]-P[i,:]'*x-ξ[i])) - σ3[1] * z[i] - σ4[1] * (z[i]-P[i,:]'*x-ξ[i])
             @constraints(model, begin
-                σ01 .>= 0; σ3 .>= 0; σ4 .>= 0;
+                σ02 .>= 0; σ3 .>= 0; σ4 .>= 0;
             end)
         end
         @constraint(model, obj .== 0)
@@ -256,6 +369,71 @@ function OuterApproximation(Q0, b0, c0, ord, P, ξ, method)
     optimize!(model)
     @printf("Termination status: %s, primal status: %s, dual status: %s.\n", termination_status(model), primal_status(model), dual_status(model))
     # println(value.(Q)); println(value.(b)); println(value.(c))
+    # return value.(-Q*Q), value.(-2 .* Q*b), value.(1 .- b'*b)
+    return value.(Q), value.(b), value.(c)
+end
+
+function OuterApproximationSublevel(Q0, b0, c0, P, ξ, lv)
+    l = length(P);
+    p = Int.(zeros(l+1,1)); p[1] = size(P[1],2); 
+    for i = 1:l
+        p[i+1] = size(P[i],1)
+    end
+    dx = Int.(zeros(l+1,1)); dz = Int.(zeros(l+1,1));
+    for i = 1:l
+        dx[i+1] = sum(p[1:i]); dz[i+1] = sum(p[2:i+1]);
+    end
+    model = SOSModel(with_optimizer(Mosek.Optimizer))
+    # objective variable
+    Q = @variable(model, [1:p[l+1], 1:p[l+1]], Symmetric);
+    b = @variable(model, [1:p[l+1], 1:1]);
+    c = @variable(model, [1:1, 1:1]);
+    @polyvar lower_bound
+    @variable(model, lower_bound)
+    @objective(model, Max, lower_bound)
+    Mat = [-Q b/2; b'/2 1-c[1]];
+    vect = lower_bound
+    for i = 1:p[l+1]
+        vect = hcat(vect, -Q[i,i:p[l+1]]')
+    end
+    @constraints(model, begin
+        Mat in PSDCone()
+        vect[:] in MOI.RootDetConeTriangle(p[l+1])
+    end)
+    @polyvar x[1:dx[l+1]] z[1:dz[l+1]]
+    X0 = monomials([x; z], 0:2*1); σ0 = @variable(model, [1:1], Poly(X0))
+    X00 = monomials(x[1:lv], 0:2*2); σ00 = @variable(model, [1:1], Poly(X00))
+    X1 = monomials(x[1:lv], 0:2*1); σ1 = @variable(model, [1:1], Poly(X1))
+    obj = z[dz[l]+1:dz[l+1]]'*Q*z[dz[l]+1:dz[l+1]].+b'*z[dz[l]+1:dz[l+1]].+c - σ0[1] - σ1[1] * (x[1:dx[2]]'*Q0*x[1:dx[2]].+b0'*x[1:dx[2]].+c0)
+    @constraints(model, begin
+        σ0 .>= 0; σ00 .>= 0; σ1 .>= 0;
+    end)
+    for i = 1:l
+        for j = 1:p[i+1]
+            X00 = monomials([x[dx[i]+1:dx[i]+lv]; z[dz[i]+j]], 0:2*2); σ00 = @variable(model, [1:1], Poly(X00));
+            X1 = monomials([x[dx[i]+1:dx[i]+lv]; z[dz[i]+j]], 0:2*1); σ1 = @variable(model, [1:1], Poly(X1));
+            X2 = monomials([x[dx[i]+1:dx[i]+lv]; z[dz[i]+j]], 0:2*1); σ2 = @variable(model, [1:1], Poly(X2));
+            X3 = monomials([x[dx[i]+1:dx[i]+lv]; z[dz[i]+j]], 0:2*1); σ3 = @variable(model, [1:1], Poly(X3));
+            obj = obj - σ00[1] - σ1[1] * (z[dz[i]+j]*(z[dz[i]+j]-P[i][j,:]'*x[dx[i]+1:dx[i+1]]-ξ[i][j])) - σ2[1] * z[dz[i]+j] - σ3[1] * (z[dz[i]+j]-P[i][j,:]'*x[dx[i]+1:dx[i+1]]-ξ[i][j])
+            @constraints(model, begin
+                σ00 .>= 0; σ2 .>= 0; σ3 .>= 0;
+            end)
+        end
+        Λ = @variable(model, [1:p[i+1],1:p[i+1]], Symmetric)
+        for j = 1:p[i+1]-1
+            for k = i+1:p[i+1]
+                obj = obj + Λ[j,k]*((z[dz[i]+k] - z[dz[i]+j])^2 - (z[dz[i]+k] - z[dz[i]+j])*(P[i][k,:]'*x[dx[i]+1:dx[i+1]] + ξ[i][k] - P[i][j,:]'*x[dx[i]+1:dx[i+1]] - ξ[i][j]))
+            end
+        end
+        @constraint(model, Λ .>= 0)
+    end
+    @constraint(model, obj .== 0)
+    # solve
+    MOI.set(model, MOI.Silent(), true);
+    optimize!(model)
+    @printf("Termination status: %s, primal status: %s, dual status: %s.\n", termination_status(model), primal_status(model), dual_status(model))
+    # println(value.(Q)); println(value.(b)); println(value.(c))
+    # return value.(-Q*Q), value.(-2 .* Q*b), value.(1 .- b'*b)
     return value.(Q), value.(b), value.(c)
 end
 
@@ -267,7 +445,7 @@ function OuterApproximationMorari(Q0, b0, c0, P, ξ)
         p[i+1] = size(P[i],1)
         d = d + p[i]
     end
-    model = SOSModel(with_optimizer(Mosek.Optimizer))
+    model = Model(with_optimizer(Mosek.Optimizer))
     # objective variable
     Q = @variable(model, [1:p[l+1], 1:p[l+1]], Symmetric);
     b = @variable(model, [1:p[l+1], 1:1]);
@@ -331,7 +509,7 @@ end
 
 function OuterApproximationFazlyab(Q0, b0, c0, P, ξ)
     p1 = size(P[1], 2); p2 = size(P[1], 1)
-    model = SOSModel(with_optimizer(Mosek.Optimizer))
+    model = Model(with_optimizer(Mosek.Optimizer))
     # objective variable
     Q = @variable(model, [1:p2, 1:p2], Symmetric);
     b = @variable(model, [1:p2, 1:1]);
@@ -340,14 +518,21 @@ function OuterApproximationFazlyab(Q0, b0, c0, P, ξ)
     λ2 = @variable(model, [1:p2, 1:1]);
     λ3 = @variable(model, [1:p2, 1:1]);
     λ4 = @variable(model, [1:p2, 1:1]);
+    Λ = @variable(model, [1:p2, 1:p2]);
     # matrix components
     M1 = [zeros(p1,p1+p2+1); zeros(p2,p1) -Q -1/2*b; zeros(1,p1) -1/2*b' -c[1]];
     M2 = λ1.*[Q0 zeros(p1,p2) 1/2*b0; zeros(p2,p1+p2+1); 1/2*b0' zeros(1,p2) c0];
-    M3 = [zeros(p1,p1) -1/2*P'*diagm(λ2[:]) zeros(p1,1); -1/2*diagm(λ2[:])*P diagm(λ2[:]) -1/2*(λ2 .* ξ); zeros(1,p1) -1/2*(λ2' .* ξ') 0];
+    M3 = [zeros(p1,p1) -1/2*P[1]'*diagm(λ2[:]) zeros(p1,1); -1/2*diagm(λ2[:])*P[1] diagm(λ2[:]) -1/2*(λ2 .* ξ[1]); zeros(1,p1) -1/2*(λ2' .* ξ[1]') 0];
     M4 = [zeros(p1,p1+p2+1); zeros(p2,p1+p2) 1/2*λ3; zeros(1,p1) 1/2*λ3' 0];
-    M5 = [zeros(p1,p1+p2) -1/2*P'*λ4; zeros(p2,p1+p2) 1/2*λ4; -1/2*λ4'*P 1/2*λ4' -λ4'*ξ];
-    e = [zeros(p1+p2,1); 1];
-    M = [[M2+M3+M4+M5-e*e' [zeros(p1,p2); I(p2)*Q; b']]; [zeros(p2,p1) Q*I(p2) b -Matrix(I(p2))]];
+    M5 = [zeros(p1,p1+p2) -1/2*P[1]'*λ4; zeros(p2,p1+p2) 1/2*λ4; -1/2*λ4'*P[1] 1/2*λ4' -λ4'*ξ[1]];
+    E = Matrix(I(p2)); T = zeros(p2,p2);
+    for i = 1:p2-1
+        for j = i+1:p2
+            T = T + Λ[i,j].*(E[i,:] - E[j,:])*(E[i,:] - E[j,:])'
+        end
+    end
+    M = M1+M2+M3+M4+M5+[zeros(p1,p1) 1/2*P[1]'*T zeros(p1,1); 1/2*T*P[1] -T 1/2*T*ξ[1]; zeros(1,p1) 1/2*ξ[1]'*T 0]
+    # M = [[M2+M3+M4+M5+[zeros(p1,p1) 1/2*P[1]'*T zeros(p1,1); 1/2*T*P[1] -T 1/2*T*ξ[1]; zeros(1,p1) 1/2*ξ[1]'*T 0]-e*e' [zeros(p1,p2); I(p2)*Q; b']]; [zeros(p2,p1) Q*I(p2) b -Matrix(I(p2))]];
     @variable(model, lower_bound)
     @objective(model, Max, lower_bound)
     Mat = [-Q b/2; b'/2 1-c[1]];
@@ -359,6 +544,7 @@ function OuterApproximationFazlyab(Q0, b0, c0, P, ξ)
         λ1 .>= 0
         λ3 .>= 0
         λ4 .>= 0
+        Λ .>= 0
         Mat in PSDCone()
         vect[:] in MOI.RootDetConeTriangle(p2)
         -M in PSDCone()
@@ -370,8 +556,8 @@ function OuterApproximationFazlyab(Q0, b0, c0, P, ξ)
     optimize!(model)
     @printf("Termination status: %s, primal status: %s, dual status: %s.\n", termination_status(model), primal_status(model), dual_status(model))
     # println(value.(Q)); println(value.(b)); println(value.(c))
-    return value.(-Q*Q), value.(-2 .* Q*b), value.(1 .- b'*b)
-    # return value.(Q), value.(b), value.(c)
+    # return value.(-Q*Q), value.(-2 .* Q*b), value.(1 .- b'*b)
+    return value.(Q), value.(b), value.(c)
 end
 
 # plot the ellipsoid
@@ -403,8 +589,8 @@ function OuterApproximationPlot(Q0, b0, c0, ord, P, ξ, method, k)
 end
 
 # plot the ellipsoid by sampling
-function OuterApproximationPlotSampling(Q0, b0, c0, ord, P, ξ, method, k)
-    num = 100000; n = size(Q0, 1); x11 = zeros(num,1); x21 = zeros(num,1); 
+function OuterApproximationPlotSampling(Q0, b0, c0, ord, P, ξ, method, k, lv=2)
+    num = 100000; n = size(Q0, 1); x11 = zeros(num,1); x21 = zeros(num,1);
     Q = Q0; b = b0; c = c0;
     F = eigen(Q); T = F.vectors; Γ = diagm(sqrt.(-F.values));
     v = -1/2 * Q^(-1) * b; m = c .- v'*Q*v
@@ -415,8 +601,12 @@ function OuterApproximationPlotSampling(Q0, b0, c0, ord, P, ξ, method, k)
         end
         x11[i] = x[1]; x21[i] = x[2]
     end
-    if isempty(method)
-        Q, b, c = OuterApproximationMorari(Q, b, c, P[1:k], ξ)
+    if method == "Morari"
+        Q, b, c = OuterApproximationMorari(Q, b, c, P[1:k], ξ[1:k])
+    elseif method == "Fazlyab"
+        Q, b, c = OuterApproximationFazlyab(Q, b, c, P[1:k], ξ[1:k])
+    elseif method == "sublevel"
+        Q, b, c = OuterApproximationSublevel(Q, b, c, P[1:k], ξ[1:k], lv)
     else
         for i = 1:k
             Q, b, c = OuterApproximation(Q, b, c, ord, P[i], ξ[i], method)
@@ -431,8 +621,8 @@ function OuterApproximationPlotSampling(Q0, b0, c0, ord, P, ξ, method, k)
     x22 = (sqrt(m).*T*Γ^(-1)*[cos.(θ)'; sin.(θ)'].+v)[2,:];
     # x1 = [x11 x12]; x2 = [x21 x22];
     p = plot(x11, x21, seriestype = :scatter, markersize = 1)
-    if isempty(method)
-        p = plot!(x12, x22, title = "Morari", label = ["Image" "OutApprox"], legend=false)#:outertopright)
+    if method in ["Morari" "Fazlyab"]
+        p = plot!(x12, x22, title = method, label = ["Image" "OutApprox"], legend=false)#:outertopright)
     else
         p = plot!(x12, x22, title = @sprintf("Ord %d, %s", ord, uppercasefirst(method)), label = ["Image" "OutApprox"], legend=false)#:outertopright)
     end
@@ -443,7 +633,7 @@ end
 
 
 
-    OuterApproximationPlotSampling (generic function with 1 method)
+    OuterApproximationPlotSampling (generic function with 2 methods)
 
 
 
@@ -469,12 +659,13 @@ p11 = OuterApproximationPlotSampling(Q01, b01, c01, 1, P1, ξ1, "tong", L1);
 p12 = OuterApproximationPlotSampling(Q01, b01, c01, 2, P1, ξ1, "tong", L1);
 p21 = OuterApproximationPlotSampling(Q01, b01, c01, 1, P1, ξ1, "split", L1);
 p22 = OuterApproximationPlotSampling(Q01, b01, c01, 2, P1, ξ1, "split", L1);
-p31 = OuterApproximationPlotSampling(Q01, b01, c01, 1, P1, ξ1, "", L1);
-p32 = plot();
+p31 = OuterApproximationPlotSampling(Q01, b01, c01, 1, P1, ξ1, "Morari", L1);
+p32 = OuterApproximationPlotSampling(Q01, b01, c01, 2, P1, ξ1, "sublevel", L1);
 
 plot(p11, p21, p31, p12, p22, p32, layout = grid(2,3), fmt = :png)
 ```
 
+    Termination status: OPTIMAL, primal status: FEASIBLE_POINT, dual status: FEASIBLE_POINT.
     Termination status: OPTIMAL, primal status: FEASIBLE_POINT, dual status: FEASIBLE_POINT.
     Termination status: OPTIMAL, primal status: FEASIBLE_POINT, dual status: FEASIBLE_POINT.
     Termination status: OPTIMAL, primal status: FEASIBLE_POINT, dual status: FEASIBLE_POINT.
@@ -606,8 +797,8 @@ p11 = OuterApproximationPlotSampling(Q0, b0, c0, 1, P, ξ, "tong", k);
 p12 = OuterApproximationPlotSampling(Q0, b0, c0, 2, P, ξ, "tong", k);
 # p21 = OuterApproximationPlotSampling(Q0, b0, c0, 1, P, ξ, "jean", k);
 # p22 = OuterApproximationPlotSampling(Q0, b0, c0, 2, P, ξ, "jean", k);
-p21 = OuterApproximationPlotSampling(Q0, b0, c0, 1, P, ξ, "", k);
-p22 = plot();
+p21 = OuterApproximationPlotSampling(Q0, b0, c0, 1, P, ξ, "Morari", k);
+p22 = OuterApproximationPlotSampling(Q0, b0, c0, 2, P, ξ, "sublevel", k);
 p31 = OuterApproximationPlotSampling(Q0, b0, c0, 1, P, ξ, "split", k);
 p32 = OuterApproximationPlotSampling(Q0, b0, c0, 2, P, ξ, "split", k);
 
@@ -622,11 +813,12 @@ plot(p11, p21, p31, p12, p22, p32, layout = grid(2,3), fmt = :png)
     Termination status: OPTIMAL, primal status: FEASIBLE_POINT, dual status: FEASIBLE_POINT.
     Termination status: OPTIMAL, primal status: FEASIBLE_POINT, dual status: FEASIBLE_POINT.
     Termination status: OPTIMAL, primal status: FEASIBLE_POINT, dual status: FEASIBLE_POINT.
+    Termination status: SLOW_PROGRESS, primal status: UNKNOWN_RESULT_STATUS, dual status: UNKNOWN_RESULT_STATUS.
     Termination status: OPTIMAL, primal status: FEASIBLE_POINT, dual status: FEASIBLE_POINT.
     Termination status: OPTIMAL, primal status: FEASIBLE_POINT, dual status: FEASIBLE_POINT.
     Termination status: OPTIMAL, primal status: FEASIBLE_POINT, dual status: FEASIBLE_POINT.
     Termination status: OPTIMAL, primal status: FEASIBLE_POINT, dual status: FEASIBLE_POINT.
-    Termination status: OPTIMAL, primal status: FEASIBLE_POINT, dual status: FEASIBLE_POINT.
+    Termination status: SLOW_PROGRESS, primal status: UNKNOWN_RESULT_STATUS, dual status: UNKNOWN_RESULT_STATUS.
     Termination status: SLOW_PROGRESS, primal status: FEASIBLE_POINT, dual status: FEASIBLE_POINT.
     
 
@@ -659,14 +851,15 @@ p11 = OuterApproximationPlotSampling(Q01, b01, c01, 1, P1, ξ1, "tong", L1);
 p12 = OuterApproximationPlotSampling(Q01, b01, c01, 2, P1, ξ1, "tong", L1);
 # p21 = OuterApproximationPlotSampling(Q01, b01, c01, 1, P1, ξ1, "jean", L1);
 # p22 = OuterApproximationPlotSampling(Q01, b01, c01, 2, P1, ξ1, "jean", L1);
-p21 = OuterApproximationPlotSampling(Q01, b01, c01, 1, P1, ξ1, "", L1);
-p22 = plot();
+p21 = OuterApproximationPlotSampling(Q01, b01, c01, 1, P1, ξ1, "Morari", L1);
+p22 = OuterApproximationPlotSampling(Q01, b01, c01, 1, P1, ξ1, "sublevel", L1);
 p31 = OuterApproximationPlotSampling(Q01, b01, c01, 1, P1, ξ1, "split", L1);
 p32 = OuterApproximationPlotSampling(Q01, b01, c01, 2, P1, ξ1, "split", L1);
 
 plot(p11, p21, p31, p12, p22, p32, layout = grid(2,3), fmt = :png)
 ```
 
+    Termination status: OPTIMAL, primal status: FEASIBLE_POINT, dual status: FEASIBLE_POINT.
     Termination status: OPTIMAL, primal status: FEASIBLE_POINT, dual status: FEASIBLE_POINT.
     Termination status: OPTIMAL, primal status: FEASIBLE_POINT, dual status: FEASIBLE_POINT.
     Termination status: OPTIMAL, primal status: FEASIBLE_POINT, dual status: FEASIBLE_POINT.
