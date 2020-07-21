@@ -158,13 +158,13 @@ function OuterApproximation(Q0, b0, c0, ord, P, ξ, method)
     # solve
     MOI.set(model, MOI.Silent(), true);
     optimize!(model)
-    @printf("Termination status: %s, primal status: %s, dual status: %s.\n", termination_status(model), primal_status(model), dual_status(model))
+    @printf("Optimal value: %.2f, termination status: %s, primal status: %s, dual status: %s.\n", value.(lower_bound), termination_status(model), primal_status(model), dual_status(model))
     # println(value.(Q)); println(value.(b)); println(value.(c))
     # return value.(-Q*Q), value.(-2 .* Q*b), value.(1 .- b'*b)
     return value.(Q), value.(b), value.(c), value.(lower_bound)
 end
 
-function OuterApproximationSublevel(Q0, b0, c0, P, ξ, lv)
+function OuterApproximationSublevel(Q0, b0, c0, P, ξ, lv; method="cycle")
     l = length(P);
     p = Int.(zeros(l+1,1)); p[1] = size(P[1],2);
     for i = 1:l
@@ -193,52 +193,325 @@ function OuterApproximationSublevel(Q0, b0, c0, P, ξ, lv)
     end)
     @polyvar x[1:dx[l+2]]
     X0 = monomials(x, 0:2*1); σ0 = @variable(model, [1:1], Poly(X0))
-    X00 = monomials(x[1:lv], 0:2*2); σ00 = @variable(model, [1:1], Poly(X00))
-    X1 = monomials(x[1:lv], 0:2*1); σ1 = @variable(model, [1:1], Poly(X1))
-    obj = x[dx[l+1]+1:dx[l+2]]'*Q*x[dx[l+1]+1:dx[l+2]].+b'*x[dx[l+1]+1:dx[l+2]].+c - σ0[1] - σ00[1] - σ1[1] * (x[1:dx[2]]'*Q0*x[1:dx[2]].+b0'*x[1:dx[2]].+c0)
-    @constraints(model, begin
-        σ0 .>= 0; σ00 .>= 0; σ1 .>= 0;
-    end)
-    for i = 1:l
-        for j = 1:p[i+1]
-            for k = dx[i]:dx[i+1]-lv
-                X00 = monomials([x[k+1:k+lv]; x[dx[i+1]+j]], 0:2*2); σ00 = @variable(model, [1:1], Poly(X00));
-                X1 = monomials([x[k+1:k+lv]; x[dx[i+1]+j]], 0:2*1); σ1 = @variable(model, [1:1], Poly(X1));
-                X2 = monomials([x[k+1:k+lv]; x[dx[i+1]+j]], 0:2*1); σ2 = @variable(model, [1:1], Poly(X2));
-                X3 = monomials([x[k+1:k+lv]; x[dx[i+1]+j]], 0:2*1); σ3 = @variable(model, [1:1], Poly(X3));
-                obj = obj - σ00[1] - σ1[1] * (x[dx[i+1]+j]*(x[dx[i+1]+j]-P[i][j,:]'*x[dx[i]+1:dx[i+1]]-ξ[i][j])) - σ2[1] * x[dx[i+1]+j] - σ3[1] * (x[dx[i+1]+j]-P[i][j,:]'*x[dx[i]+1:dx[i+1]]-ξ[i][j])
-                @constraints(model, begin
-                    σ00 .>= 0; σ2 .>= 0; σ3 .>= 0;
-                end)
+    obj = x[dx[l+1]+1:dx[l+2]]'*Q*x[dx[l+1]+1:dx[l+2]].+b'*x[dx[l+1]+1:dx[l+2]].+c - σ0[1]
+    @constraint(model, σ0 .>= 0)
+    if method == "cycle"
+        for k = dx[1]:dx[2]-lv
+            # X00 = monomials(x[k+1:k+lv], 0:2*2); σ00 = @variable(model, [1:1], Poly(X00))
+            X1 = monomials(x[k+1:k+lv], 0:2*1); σ1 = @variable(model, [1:1], Poly(X1))
+            obj = obj- σ1[1] * (x[1:dx[2]]'*Q0*x[1:dx[2]].+b0'*x[1:dx[2]].+c0)
+            @constraint(model, σ1 .>= 0)
+        end
+        for k = dx[2]-lv+1:dx[2]-1
+            # X00 = monomials(x[k+1:k+lv], 0:2*2); σ00 = @variable(model, [1:1], Poly(X00))
+            X1 = monomials(x[1:lv-dx[2]+k], 0:2*1); σ1 = @variable(model, [1:1], Poly(X1))
+            obj = obj- σ1[1] * (x[1:dx[2]]'*Q0*x[1:dx[2]].+b0'*x[1:dx[2]].+c0)
+            @constraint(model, σ1 .>= 0)
+        end
+        for i = 1:l
+            for j = 1:p[i+1]
+                for k = dx[i]:dx[i+1]-lv
+                    X00 = monomials([x[k+1:k+lv]; x[dx[i+1]+j]], 0:2*2); σ00 = @variable(model, [1:1], Poly(X00));
+                    X1 = monomials([x[k+1:k+lv]; x[dx[i+1]+j]], 0:2*1); σ1 = @variable(model, [1:1], Poly(X1));
+                    X2 = monomials([x[k+1:k+lv]; x[dx[i+1]+j]], 0:2*1); σ2 = @variable(model, [1:1], Poly(X2));
+                    X3 = monomials([x[k+1:k+lv]; x[dx[i+1]+j]], 0:2*1); σ3 = @variable(model, [1:1], Poly(X3));
+                    obj = obj - σ00[1] - σ1[1] * (x[dx[i+1]+j]*(x[dx[i+1]+j]-P[i][j,:]'*x[dx[i]+1:dx[i+1]]-ξ[i][j])) - σ2[1] * x[dx[i+1]+j] - σ3[1] * (x[dx[i+1]+j]-P[i][j,:]'*x[dx[i]+1:dx[i+1]]-ξ[i][j])
+                    @constraints(model, begin
+                        σ00 .>= 0; σ2 .>= 0; σ3 .>= 0;
+                    end)
+                end
+                for k = dx[i+1]-lv+1:dx[i+1]-1
+                    X00 = monomials([x[1:lv-dx[i+1]+k]; x[k+1:dx[i+1]]; x[dx[i+1]+j]], 0:2*2); σ00 = @variable(model, [1:1], Poly(X00));
+                    X1 = monomials([x[1:lv-dx[i+1]+k]; x[k+1:dx[i+1]]; x[dx[i+1]+j]], 0:2*1); σ1 = @variable(model, [1:1], Poly(X1));
+                    X2 = monomials([x[1:lv-dx[i+1]+k]; x[k+1:dx[i+1]]; x[dx[i+1]+j]], 0:2*1); σ2 = @variable(model, [1:1], Poly(X2));
+                    X3 = monomials([x[1:lv-dx[i+1]+k]; x[k+1:dx[i+1]]; x[dx[i+1]+j]], 0:2*1); σ3 = @variable(model, [1:1], Poly(X3));
+                    obj = obj - σ00[1] - σ1[1] * (x[dx[i+1]+j]*(x[dx[i+1]+j]-P[i][j,:]'*x[dx[i]+1:dx[i+1]]-ξ[i][j])) - σ2[1] * x[dx[i+1]+j] - σ3[1] * (x[dx[i+1]+j]-P[i][j,:]'*x[dx[i]+1:dx[i+1]]-ξ[i][j])
+                    @constraints(model, begin
+                        σ00 .>= 0; σ2 .>= 0; σ3 .>= 0;
+                    end)
+                end
             end
-            for k = dx[i+1]-lv+1:dx[i+1]-1
-                X00 = monomials([x[1:lv-dx[i+1]+k]; x[k+1:dx[i+1]]; x[dx[i+1]+j]], 0:2*2); σ00 = @variable(model, [1:1], Poly(X00));
-                X1 = monomials([x[1:lv-dx[i+1]+k]; x[k+1:dx[i+1]]; x[dx[i+1]+j]], 0:2*1); σ1 = @variable(model, [1:1], Poly(X1));
-                X2 = monomials([x[1:lv-dx[i+1]+k]; x[k+1:dx[i+1]]; x[dx[i+1]+j]], 0:2*1); σ2 = @variable(model, [1:1], Poly(X2));
-                X3 = monomials([x[1:lv-dx[i+1]+k]; x[k+1:dx[i+1]]; x[dx[i+1]+j]], 0:2*1); σ3 = @variable(model, [1:1], Poly(X3));
-                obj = obj - σ00[1] - σ1[1] * (x[dx[i+1]+j]*(x[dx[i+1]+j]-P[i][j,:]'*x[dx[i]+1:dx[i+1]]-ξ[i][j])) - σ2[1] * x[dx[i+1]+j] - σ3[1] * (x[dx[i+1]+j]-P[i][j,:]'*x[dx[i]+1:dx[i+1]]-ξ[i][j])
-                @constraints(model, begin
-                    σ00 .>= 0; σ2 .>= 0; σ3 .>= 0;
-                end)
+            for j = 1:p[i+1]-1
+                for k = j+1:p[i+1]
+                    for s = dx[i]:dx[i+1]-lv
+                        X00 = monomials([x[s+1:s+lv]; x[dx[i+1]+j]; x[dx[i+1]+k]], 0:2*0); σ00 = @variable(model, [1:1], Poly(X00));
+                        X1 = monomials([x[s+1:s+lv]; x[dx[i+1]+j]; x[dx[i+1]+k]], 0:2*0); σ1 = @variable(model, [1:1], Poly(X1));
+                        obj = obj - σ00[1] + σ1[1]*((x[dx[i+1]+k] - x[dx[i+1]+j])^2 - (x[dx[i+1]+k] - x[dx[i+1]+j])*(P[i][k,:]'*x[dx[i]+1:dx[i+1]] + ξ[i][k] - P[i][j,:]'*x[dx[i]+1:dx[i+1]] - ξ[i][j]))
+                        @constraints(model, begin
+                            σ00 .>= 0; σ1 .>= 0
+                        end)
+                    end
+                    for s = dx[i+1]-lv+1:dx[i+1]-1
+                        X00 = monomials([x[1:lv-dx[i+1]+s]; x[s+1:dx[i+1]]; x[dx[i+1]+j]; x[dx[i+1]+k]], 0:2*0); σ00 = @variable(model, [1:1], Poly(X00));
+                        X1 = monomials([x[1:lv-dx[i+1]+s]; x[s+1:dx[i+1]]; x[dx[i+1]+j]; x[dx[i+1]+k]], 0:2*0); σ1 = @variable(model, [1:1], Poly(X1));
+                        obj = obj - σ00[1] + σ1[1]*((x[dx[i+1]+k] - x[dx[i+1]+j])^2 - (x[dx[i+1]+k] - x[dx[i+1]+j])*(P[i][k,:]'*x[dx[i]+1:dx[i+1]] + ξ[i][k] - P[i][j,:]'*x[dx[i]+1:dx[i+1]] - ξ[i][j]))
+                        @constraints(model, begin
+                            σ00 .>= 0; σ1 .>= 0
+                        end)
+                    end
+                end
             end
         end
-        for j = 1:p[i+1]-1
-            for k = j+1:p[i+1]
-                for s = dx[i]:dx[i+1]-lv
-                    X00 = monomials([x[s+1:s+lv]; x[dx[i+1]+j]; x[dx[i+1]+k]], 0:2*2); σ00 = @variable(model, [1:1], Poly(X00));
-                    X1 = monomials([x[s+1:s+lv]; x[dx[i+1]+j]; x[dx[i+1]+k]], 0:2*1); σ1 = @variable(model, [1:1], Poly(X1));
+    elseif method == "cycle_v"
+        for k = dx[1]:dx[2]-lv
+            # X00 = monomials(x[k+1:k+lv], 0:2*2); σ00 = @variable(model, [1:1], Poly(X00))
+            X1 = monomials(x[k+1:k+lv], 0:2*1); σ1 = @variable(model, [1:1], Poly(X1))
+            obj = obj- σ1[1] * (x[1:dx[2]]'*Q0*x[1:dx[2]].+b0'*x[1:dx[2]].+c0)
+            @constraint(model, σ1 .>= 0)
+        end
+        for k = dx[2]-lv+1:dx[2]-1
+            # X00 = monomials(x[k+1:k+lv], 0:2*2); σ00 = @variable(model, [1:1], Poly(X00))
+            X1 = monomials(x[1:lv-dx[2]+k], 0:2*1); σ1 = @variable(model, [1:1], Poly(X1))
+            obj = obj- σ1[1] * (x[1:dx[2]]'*Q0*x[1:dx[2]].+b0'*x[1:dx[2]].+c0)
+            @constraint(model, σ1 .>= 0)
+        end
+        for i = 1:l
+            for j = 1:p[i+1]
+                for k = dx[i]:dx[i+1]-lv
+                    set = collect(k+1:k+lv)
+                    for s = dx[i]+1:dx[i+1]
+                        if !(s in set) && (length(set) != p[i])
+                            set_bis = sort(vcat(set, s))
+                            X00 = monomials([x[set_bis]; x[dx[i+1]+j]], 0:2*2); σ00 = @variable(model, [1:1], Poly(X00));
+                            obj += - σ00[1]
+                            @constraint(model, σ00 .>= 0)
+                        elseif length(set) == p[i]
+                            X00 = monomials([x[set]; x[dx[i+1]+j]], 0:2*2); σ00 = @variable(model, [1:1], Poly(X00));
+                            obj += - σ00[1]
+                            @constraint(model, σ00 .>= 0)
+                        end
+                    end
+                    X1 = monomials([x[k+1:k+lv]; x[dx[i+1]+j]], 0:2*1); σ1 = @variable(model, [1:1], Poly(X1));
+                    X2 = monomials([x[k+1:k+lv]; x[dx[i+1]+j]], 0:2*1); σ2 = @variable(model, [1:1], Poly(X2));
+                    X3 = monomials([x[k+1:k+lv]; x[dx[i+1]+j]], 0:2*1); σ3 = @variable(model, [1:1], Poly(X3));
+                    obj = obj - σ1[1] * (x[dx[i+1]+j]*(x[dx[i+1]+j]-P[i][j,:]'*x[dx[i]+1:dx[i+1]]-ξ[i][j])) - σ2[1] * x[dx[i+1]+j] - σ3[1] * (x[dx[i+1]+j]-P[i][j,:]'*x[dx[i]+1:dx[i+1]]-ξ[i][j])
+                    @constraints(model, begin
+                        σ2 .>= 0; σ3 .>= 0;
+                    end)
+                end
+                for k = dx[i+1]-lv+1:dx[i+1]-1
+                    set = vcat(collect(1:lv-dx[i+1]+k), collect(k+1:dx[i+1]))
+                    for s = dx[i]+1:dx[i+1]
+                        if !(s in set) && (length(set) != p[i])
+                            set_bis = sort(vcat(set, s))
+                            X00 = monomials([x[set_bis]; x[dx[i+1]+j]], 0:2*2); σ00 = @variable(model, [1:1], Poly(X00));
+                            obj += - σ00[1]
+                            @constraint(model, σ00 .>= 0)
+                        elseif length(set) == p[i]
+                            X00 = monomials([x[set]; x[dx[i+1]+j]], 0:2*2); σ00 = @variable(model, [1:1], Poly(X00));
+                            obj += - σ00[1]
+                            @constraint(model, σ00 .>= 0)
+                        end
+                    end
+                    X1 = monomials([x[1:lv-dx[i+1]+k]; x[k+1:dx[i+1]]; x[dx[i+1]+j]], 0:2*1); σ1 = @variable(model, [1:1], Poly(X1));
+                    X2 = monomials([x[1:lv-dx[i+1]+k]; x[k+1:dx[i+1]]; x[dx[i+1]+j]], 0:2*1); σ2 = @variable(model, [1:1], Poly(X2));
+                    X3 = monomials([x[1:lv-dx[i+1]+k]; x[k+1:dx[i+1]]; x[dx[i+1]+j]], 0:2*1); σ3 = @variable(model, [1:1], Poly(X3));
+                    obj = obj - σ00[1] - σ1[1] * (x[dx[i+1]+j]*(x[dx[i+1]+j]-P[i][j,:]'*x[dx[i]+1:dx[i+1]]-ξ[i][j])) - σ2[1] * x[dx[i+1]+j] - σ3[1] * (x[dx[i+1]+j]-P[i][j,:]'*x[dx[i]+1:dx[i+1]]-ξ[i][j])
+                    @constraints(model, begin
+                        σ2 .>= 0; σ3 .>= 0;
+                    end)
+                end
+            end
+            for j = 1:p[i+1]-1
+                for k = j+1:p[i+1]
+                    for s = dx[i]:dx[i+1]-lv
+                        set = collect(s+1:s+lv)
+                        for t = dx[i]+1:dx[i+1]
+                            if !(t in set) && (length(set) != p[i])
+                                set_bis = sort(vcat(set, t))
+                                X00 = monomials([x[set_bis]; x[dx[i+1]+j]; x[dx[i+1]+k]], 0:2*0); σ00 = @variable(model, [1:1], Poly(X00));
+                                obj += - σ00[1]
+                                @constraint(model, σ00 .>= 0)
+                            elseif length(set) == p[i]
+                                X00 = monomials([x[set]; x[dx[i+1]+j]; x[dx[i+1]+k]], 0:2*0); σ00 = @variable(model, [1:1], Poly(X00));
+                                obj += - σ00[1]
+                                @constraint(model, σ00 .>= 0)
+                            end
+                        end
+                        X1 = monomials([x[s+1:s+lv]; x[dx[i+1]+j]; x[dx[i+1]+k]], 0:2*0); σ1 = @variable(model, [1:1], Poly(X1));
+                        obj = obj - σ00[1] + σ1[1]*((x[dx[i+1]+k] - x[dx[i+1]+j])^2 - (x[dx[i+1]+k] - x[dx[i+1]+j])*(P[i][k,:]'*x[dx[i]+1:dx[i+1]] + ξ[i][k] - P[i][j,:]'*x[dx[i]+1:dx[i+1]] - ξ[i][j]))
+                        @constraint(model, σ1 .>= 0)
+                    end
+                    for s = dx[i+1]-lv+1:dx[i+1]-1
+                        set = vcat(collect(1:lv-dx[i+1]+s), collect(s+1:dx[i+1]))
+                        for t = dx[i]+1:dx[i+1]
+                            if !(t in set) && (length(set) != p[i])
+                                set_bis = sort(vcat(set, t))
+                                X00 = monomials([x[set_bis]; x[dx[i+1]+j]; x[dx[i+1]+k]], 0:2*0); σ00 = @variable(model, [1:1], Poly(X00));
+                                obj += - σ00[1]
+                                @constraint(model, σ00 .>= 0)
+                            elseif length(set) == p[i]
+                                X00 = monomials([x[set]; x[dx[i+1]+j]; x[dx[i+1]+k]], 0:2*0); σ00 = @variable(model, [1:1], Poly(X00));
+                                obj += - σ00[1]
+                                @constraint(model, σ00 .>= 0)
+                            end
+                        end
+                        X1 = monomials([x[1:lv-dx[i+1]+s]; x[s+1:dx[i+1]]; x[dx[i+1]+j]; x[dx[i+1]+k]], 0:2*0); σ1 = @variable(model, [1:1], Poly(X1));
+                        obj = obj - σ00[1] + σ1[1]*((x[dx[i+1]+k] - x[dx[i+1]+j])^2 - (x[dx[i+1]+k] - x[dx[i+1]+j])*(P[i][k,:]'*x[dx[i]+1:dx[i+1]] + ξ[i][k] - P[i][j,:]'*x[dx[i]+1:dx[i+1]] - ξ[i][j]))
+                        @constraint(model, σ1 .>= 0)
+                    end
+                end
+            end
+        end
+    elseif method == "random"
+        set = sort(sample(1:p[1], lv, replace=false))
+        #set = sort(randperm(p[1])[1:lv])
+        X00 = monomials(x[set], 0:2*2); σ00 = @variable(model, [1:1], Poly(X00))
+        X1 = monomials(x[set], 0:2*1); σ1 = @variable(model, [1:1], Poly(X1))
+        obj = obj- σ1[1] * (x[1:dx[2]]'*Q0*x[1:dx[2]].+b0'*x[1:dx[2]].+c0)
+        @constraint(model, σ1 .>= 0)
+        for i = 1:l
+            for j = 1:p[i+1]
+                set = sort(sample(1:p[i], lv, replace=false))
+                X00 = monomials([x[dx[i].+set]; x[dx[i+1]+j]], 0:2*2); σ00 = @variable(model, [1:1], Poly(X00));
+                X1 = monomials([x[dx[i].+set]; x[dx[i+1]+j]], 0:2*1); σ1 = @variable(model, [1:1], Poly(X1));
+                X2 = monomials([x[dx[i].+set]; x[dx[i+1]+j]], 0:2*1); σ2 = @variable(model, [1:1], Poly(X2));
+                X3 = monomials([x[dx[i].+set]; x[dx[i+1]+j]], 0:2*1); σ3 = @variable(model, [1:1], Poly(X3));
+                obj = obj - σ00[1] - σ1[1] * (x[dx[i+1]+j]*(x[dx[i+1]+j]-P[i][j,:]'*x[dx[i]+1:dx[i+1]]-ξ[i][j])) - σ2[1] * x[dx[i+1]+j] - σ3[1] * (x[dx[i+1]+j]-P[i][j,:]'*x[dx[i]+1:dx[i+1]]-ξ[i][j])
+                @constraints(model, begin
+                    σ00 .>= 0; σ2 .>= 0; σ3 .>= 0;
+                end)
+            end
+            for j = 1:p[i+1]-1
+                for k = j+1:p[i+1]
+                    set = sort(sample(1:p[i], lv, replace=false))
+                    X00 = monomials([x[dx[i].+set]; x[dx[i+1]+j]; x[dx[i+1]+k]], 0:2*0); σ00 = @variable(model, [1:1], Poly(X00));
+                    X1 = monomials([x[dx[i].+set]; x[dx[i+1]+j]; x[dx[i+1]+k]], 0:2*0); σ1 = @variable(model, [1:1], Poly(X1));
                     obj = obj - σ00[1] + σ1[1]*((x[dx[i+1]+k] - x[dx[i+1]+j])^2 - (x[dx[i+1]+k] - x[dx[i+1]+j])*(P[i][k,:]'*x[dx[i]+1:dx[i+1]] + ξ[i][k] - P[i][j,:]'*x[dx[i]+1:dx[i+1]] - ξ[i][j]))
                     @constraints(model, begin
                         σ00 .>= 0; σ1 .>= 0
                     end)
                 end
-                for s = dx[i+1]-lv+1:dx[i+1]-1
-                    X00 = monomials([x[1:lv-dx[i+1]+s]; x[s+1:dx[i+1]]; x[dx[i+1]+j]; x[dx[i+1]+k]], 0:2*2); σ00 = @variable(model, [1:1], Poly(X00));
-                    X1 = monomials([x[1:lv-dx[i+1]+s]; x[s+1:dx[i+1]]; x[dx[i+1]+j]; x[dx[i+1]+k]], 0:2*1); σ1 = @variable(model, [1:1], Poly(X1));
+            end
+        end
+    elseif method == "random_v"
+        set = sort(sample(1:p[1], lv, replace=false))
+        #set = sort(randperm(p[1])[1:lv])
+        X00 = monomials(x[set], 0:2*2); σ00 = @variable(model, [1:1], Poly(X00))
+        X1 = monomials(x[set], 0:2*1); σ1 = @variable(model, [1:1], Poly(X1))
+        obj += - σ1[1] * (x[1:dx[2]]'*Q0*x[1:dx[2]].+b0'*x[1:dx[2]].+c0)
+        @constraint(model, σ1 .>= 0)
+        for i = 1:l
+            for j = 1:p[i+1]
+                set = sort(sample(1:p[i], lv, replace=false))
+                for s = 1:p[i]
+                    if !(s in set) && (length(set) != p[i])
+                        set_bis = sort(vcat(set, s))
+                        X00 = monomials([x[dx[i].+set_bis]; x[dx[i+1]+j]], 0:2*2); σ00 = @variable(model, [1:1], Poly(X00));
+                        obj += - σ00[1]
+                        @constraint(model, σ00 .>= 0)
+                    elseif length(set) == p[i]
+                        X00 = monomials([x[dx[i].+set]; x[dx[i+1]+j]], 0:2*2); σ00 = @variable(model, [1:1], Poly(X00));
+                        obj += - σ00[1]
+                        @constraint(model, σ00 .>= 0)
+                    end
+                end
+                X1 = monomials([x[dx[i].+set]; x[dx[i+1]+j]], 0:2*1); σ1 = @variable(model, [1:1], Poly(X1));
+                X2 = monomials([x[dx[i].+set]; x[dx[i+1]+j]], 0:2*1); σ2 = @variable(model, [1:1], Poly(X2));
+                X3 = monomials([x[dx[i].+set]; x[dx[i+1]+j]], 0:2*1); σ3 = @variable(model, [1:1], Poly(X3));
+                obj += - σ1[1] * (x[dx[i+1]+j]*(x[dx[i+1]+j]-P[i][j,:]'*x[dx[i]+1:dx[i+1]]-ξ[i][j])) - σ2[1] * x[dx[i+1]+j] - σ3[1] * (x[dx[i+1]+j]-P[i][j,:]'*x[dx[i]+1:dx[i+1]]-ξ[i][j])
+                @constraints(model, begin
+                    σ2 .>= 0; σ3 .>= 0;
+                end)
+            end
+            for j = 1:p[i+1]-1
+                for k = j+1:p[i+1]
+                    set = sort(sample(1:p[i], lv, replace=false))
+                    for s = 1:p[i]
+                        if !(s in set) && (length(set) != p[i])
+                            set_bis = sort(vcat(set, s))
+                            X00 = monomials([x[dx[i].+set_bis]; x[dx[i+1]+j]; x[dx[i+1]+k]], 0:2*0); σ00 = @variable(model, [1:1], Poly(X00));
+                            obj += - σ00[1]
+                            @constraint(model, σ00 .>= 0)
+                        elseif length(set) != p[i]
+                            X00 = monomials([x[dx[i].+set]; x[dx[i+1]+j]; x[dx[i+1]+k]], 0:2*0); σ00 = @variable(model, [1:1], Poly(X00));
+                            obj += - σ00[1]
+                            @constraint(model, σ00 .>= 0)
+                        end
+                    end
+                    X1 = monomials([x[dx[i].+set]; x[dx[i+1]+j]; x[dx[i+1]+k]], 0:2*0); σ1 = @variable(model, [1:1], Poly(X1));
+                    obj += σ1[1]*((x[dx[i+1]+k] - x[dx[i+1]+j])^2 - (x[dx[i+1]+k] - x[dx[i+1]+j])*(P[i][k,:]'*x[dx[i]+1:dx[i+1]] + ξ[i][k] - P[i][j,:]'*x[dx[i]+1:dx[i+1]] - ξ[i][j]))
+                    @constraint(model, σ1 .>= 0)
+                end
+            end
+        end
+    elseif method == "order"
+        set = collect(1:lv)
+        #set = sort(randperm(p[1])[1:lv])
+        X00 = monomials(x[set], 0:2*2); σ00 = @variable(model, [1:1], Poly(X00))
+        X1 = monomials(x[set], 0:2*1); σ1 = @variable(model, [1:1], Poly(X1))
+        obj = obj- σ1[1] * (x[1:dx[2]]'*Q0*x[1:dx[2]].+b0'*x[1:dx[2]].+c0)
+        @constraint(model, σ1 .>= 0)
+        for i = 1:l
+            for j = 1:p[i+1]
+                set = sort(sample(1:p[i], lv, replace=false))
+                X00 = monomials([x[dx[i].+set]; x[dx[i+1]+j]], 0:2*2); σ00 = @variable(model, [1:1], Poly(X00));
+                X1 = monomials([x[dx[i].+set]; x[dx[i+1]+j]], 0:2*1); σ1 = @variable(model, [1:1], Poly(X1));
+                X2 = monomials([x[dx[i].+set]; x[dx[i+1]+j]], 0:2*1); σ2 = @variable(model, [1:1], Poly(X2));
+                X3 = monomials([x[dx[i].+set]; x[dx[i+1]+j]], 0:2*1); σ3 = @variable(model, [1:1], Poly(X3));
+                obj = obj - σ00[1] - σ1[1] * (x[dx[i+1]+j]*(x[dx[i+1]+j]-P[i][j,:]'*x[dx[i]+1:dx[i+1]]-ξ[i][j])) - σ2[1] * x[dx[i+1]+j] - σ3[1] * (x[dx[i+1]+j]-P[i][j,:]'*x[dx[i]+1:dx[i+1]]-ξ[i][j])
+                @constraints(model, begin
+                    σ00 .>= 0; σ2 .>= 0; σ3 .>= 0;
+                end)
+            end
+            for j = 1:p[i+1]-1
+                for k = j+1:p[i+1]
+                    set = sort(sample(1:p[i], lv, replace=false))
+                    X00 = monomials([x[dx[i].+set]; x[dx[i+1]+j]; x[dx[i+1]+k]], 0:2*0); σ00 = @variable(model, [1:1], Poly(X00));
+                    X1 = monomials([x[dx[i].+set]; x[dx[i+1]+j]; x[dx[i+1]+k]], 0:2*0); σ1 = @variable(model, [1:1], Poly(X1));
                     obj = obj - σ00[1] + σ1[1]*((x[dx[i+1]+k] - x[dx[i+1]+j])^2 - (x[dx[i+1]+k] - x[dx[i+1]+j])*(P[i][k,:]'*x[dx[i]+1:dx[i+1]] + ξ[i][k] - P[i][j,:]'*x[dx[i]+1:dx[i+1]] - ξ[i][j]))
                     @constraints(model, begin
                         σ00 .>= 0; σ1 .>= 0
                     end)
+                end
+            end
+        end
+    elseif method == "order_v"
+        set = collect(1:lv)
+        #set = sort(randperm(p[1])[1:lv])
+        X00 = monomials(x[set], 0:2*2); σ00 = @variable(model, [1:1], Poly(X00))
+        X1 = monomials(x[set], 0:2*1); σ1 = @variable(model, [1:1], Poly(X1))
+        obj += - σ1[1] * (x[1:dx[2]]'*Q0*x[1:dx[2]].+b0'*x[1:dx[2]].+c0)
+        @constraint(model, σ1 .>= 0)
+        for i = 1:l
+            for j = 1:p[i+1]
+                for s = 1:p[i]
+                    if !(s in set) && (length(set) != p[i])
+                        set_bis = sort(vcat(set, s))
+                        X00 = monomials([x[dx[i].+set_bis]; x[dx[i+1]+j]], 0:2*2); σ00 = @variable(model, [1:1], Poly(X00));
+                        obj += - σ00[1]
+                        @constraint(model, σ00 .>= 0)
+                    elseif length(set) == p[i]
+                        X00 = monomials([x[dx[i].+set]; x[dx[i+1]+j]], 0:2*2); σ00 = @variable(model, [1:1], Poly(X00));
+                        obj += - σ00[1]
+                        @constraint(model, σ00 .>= 0)
+                    end
+                end
+                X1 = monomials([x[dx[i].+set]; x[dx[i+1]+j]], 0:2*1); σ1 = @variable(model, [1:1], Poly(X1));
+                X2 = monomials([x[dx[i].+set]; x[dx[i+1]+j]], 0:2*1); σ2 = @variable(model, [1:1], Poly(X2));
+                X3 = monomials([x[dx[i].+set]; x[dx[i+1]+j]], 0:2*1); σ3 = @variable(model, [1:1], Poly(X3));
+                obj += - σ1[1] * (x[dx[i+1]+j]*(x[dx[i+1]+j]-P[i][j,:]'*x[dx[i]+1:dx[i+1]]-ξ[i][j])) - σ2[1] * x[dx[i+1]+j] - σ3[1] * (x[dx[i+1]+j]-P[i][j,:]'*x[dx[i]+1:dx[i+1]]-ξ[i][j])
+                @constraints(model, begin
+                    σ2 .>= 0; σ3 .>= 0;
+                end)
+            end
+            for j = 1:p[i+1]-1
+                for k = j+1:p[i+1]
+                    for s = 1:p[i]
+                        if !(s in set) && (length(set) != p[i])
+                            set_bis = sort(vcat(set, s))
+                            X00 = monomials([x[dx[i].+set_bis]; x[dx[i+1]+j]; x[dx[i+1]+k]], 0:2*0); σ00 = @variable(model, [1:1], Poly(X00));
+                            obj += - σ00[1]
+                            @constraint(model, σ00 .>= 0)
+                        elseif length(set) != p[i]
+                            X00 = monomials([x[dx[i].+set]; x[dx[i+1]+j]; x[dx[i+1]+k]], 0:2*0); σ00 = @variable(model, [1:1], Poly(X00));
+                            obj += - σ00[1]
+                            @constraint(model, σ00 .>= 0)
+                        end
+                    end
+                    X1 = monomials([x[dx[i].+set]; x[dx[i+1]+j]; x[dx[i+1]+k]], 0:2*0); σ1 = @variable(model, [1:1], Poly(X1));
+                    obj += σ1[1]*((x[dx[i+1]+k] - x[dx[i+1]+j])^2 - (x[dx[i+1]+k] - x[dx[i+1]+j])*(P[i][k,:]'*x[dx[i]+1:dx[i+1]] + ξ[i][k] - P[i][j,:]'*x[dx[i]+1:dx[i+1]] - ξ[i][j]))
+                    @constraint(model, σ1 .>= 0)
                 end
             end
         end
@@ -247,7 +520,7 @@ function OuterApproximationSublevel(Q0, b0, c0, P, ξ, lv)
     # solve
     MOI.set(model, MOI.Silent(), true);
     optimize!(model)
-    @printf("Termination status: %s, primal status: %s, dual status: %s.\n", termination_status(model), primal_status(model), dual_status(model))
+    @printf("Optimal value: %.2f, termination status: %s, primal status: %s, dual status: %s, solving time: %.2f.\n", value.(lower_bound), termination_status(model), primal_status(model), dual_status(model), solve_time(model))
     # println(value.(Q)); println(value.(b)); println(value.(c))
     # return value.(-Q*Q), value.(-2 .* Q*b), value.(1 .- b'*b)
     return value.(Q), value.(b), value.(c), value.(lower_bound)
@@ -317,9 +590,9 @@ function OuterApproximationMorari(Q0, b0, c0, P, ξ)
     # solve
     MOI.set(model, MOI.Silent(), true);
     optimize!(model)
-    @printf("Termination status: %s, primal status: %s, dual status: %s.\n", termination_status(model), primal_status(model), dual_status(model))
+    @printf("Optimal value: %.2f, termination status: %s, primal status: %s, dual status: %s, solving time: %.2f.\n", value.(lower_bound.^2), termination_status(model), primal_status(model), dual_status(model), solve_time(model))
     # println(value.(Q)); println(value.(b)); println(value.(c))
-    return value.(-Q*Q), value.(-2 .* Q*b), value.(1 .- b'*b), value.(lower_bound)
+    return value.(-Q*Q), value.(-2 .* Q*b), value.(1 .- b'*b), value.(lower_bound.^2)
     # return value.(Q), value.(b), value.(c)
 end
 
@@ -370,7 +643,7 @@ function OuterApproximationFazlyab(Q0, b0, c0, P, ξ)
     # solve
     MOI.set(model, MOI.Silent(), true);
     optimize!(model)
-    @printf("Termination status: %s, primal status: %s, dual status: %s.\n", termination_status(model), primal_status(model), dual_status(model))
+    @printf("Optimal value: %.2f, termination status: %s, primal status: %s, dual status: %s.\n", value.(lower_bound.^2), termination_status(model), primal_status(model), dual_status(model))
     # println(value.(Q)); println(value.(b)); println(value.(c))
     # return value.(-Q*Q), value.(-2 .* Q*b), value.(1 .- b'*b)
     return value.(Q), value.(b), value.(c), value.(lower_bound)
@@ -405,7 +678,7 @@ function OuterApproximationPlot(Q0, b0, c0, ord, P, ξ, method, k)
 end
 
 # plot the ellipsoid by sampling
-function OuterApproximationPlotSampling(Q0, b0, c0, ord, P, ξ, method, k; lv=[], morari=[])
+function OuterApproximationPlotSampling(Q0, b0, c0, ord, P, ξ, method, k; lv=[], morari=[], meth="cycle")
     num = 100000; n = size(Q0, 1); x11 = zeros(num,1); x21 = zeros(num,1);
     Q = Q0; b = b0; c = c0;
     F = eigen(Q); T = F.vectors; Γ = diagm(sqrt.(-F.values));
@@ -419,12 +692,10 @@ function OuterApproximationPlotSampling(Q0, b0, c0, ord, P, ξ, method, k; lv=[]
     end
     if method == "Morari"
         Q, b, c, mo = OuterApproximationMorari(Q, b, c, P[1:k], ξ[1:k])
-        println(mo)
     elseif method == "Fazlyab"
         Q, b, c = OuterApproximationFazlyab(Q, b, c, P[1:k], ξ[1:k])
     elseif method == "sublevel"
-        Q, b, c, sub = OuterApproximationSublevel(Q, b, c, P[1:k], ξ[1:k], lv)
-        println(sub)
+        Q, b, c, sub = OuterApproximationSublevel(Q, b, c, P[1:k], ξ[1:k], lv, method=meth)
     else
         for i = 1:k
             Q, b, c = OuterApproximation(Q, b, c, ord, P[i], ξ[i], method)
@@ -442,9 +713,9 @@ function OuterApproximationPlotSampling(Q0, b0, c0, ord, P, ξ, method, k; lv=[]
     if method in ["Morari" "Fazlyab"]
         p = plot!(x12, x22, title = method, label = ["Image" "OutApprox"], legend=false)#:outertopright)
     elseif method == "sublevel"
-        p = plot!(x12, x22, title = @sprintf("Ord %d, level %d, %.2f%%", ord, lv, (sub[1]-morari[1])/morari[1] * 100), label = ["Image" "OutApprox"], legend=false)
+        p = plot!(x12, x22, title = @sprintf("d=%d, lv=%d, r=%.2f%%", ord, lv, (sub[1]-morari[1])/morari[1] * 100), label = ["Image" "OutApprox"], legend=false)
     else
-        p = plot!(x12, x22, title = @sprintf("Ord %d, %s", ord, uppercasefirst(method)), label = ["Image" "OutApprox"], legend=false)#:outertopright)
+        p = plot!(x12, x22, title = @sprintf("d=%d, %s", ord, uppercasefirst(method)), label = ["Image" "OutApprox"], legend=false)#:outertopright)
     end
     if method == "Morari"
         return p, mo
@@ -453,22 +724,127 @@ function OuterApproximationPlotSampling(Q0, b0, c0, ord, P, ξ, method, k; lv=[]
     end
 end
 
-n = 10; Q01 = Matrix(-I(n)); b01 = zeros(n,1); c01 = 1;
-L1 = 1; P1 = Array{Any}(undef, L1); ξ1 = Array{Any}(undef, L1);
-for i = 1:L1-1
-    P1[i] = rand(n,n); ξ1[i] = rand(n,1);
+function gen_basis(n, d)
+    num = binomial(n+d, d);
+    basis = zeros(Int64, num, n);
+    i = 0; t = 1;
+    while i < d+1
+        if basis[t, n] == i
+            if i < d
+                t = t+1;
+                basis[t, 1] = i+1;
+            end
+            i = i+1;
+        else
+            j = 1;
+            while basis[t, j] == 0
+                j = j+1;
+            end
+            if j == 1
+                t = t+1;
+                basis[t, :] = basis[t-1, :];
+                basis[t, 1] = basis[t, 1] - 1;
+                basis[t, 2] = basis[t, 2] + 1;
+            else
+                t = t+1;
+                basis[t, :] = basis[t-1, :];
+                basis[t, 1] = basis[t, j] - 1;
+                basis[t, j] = 0;
+                basis[t, j+1] = basis[t, j+1] + 1;
+            end
+        end
+    end
+    basis = sparse(basis)
+    return basis
+end
+
+# n = 2; Q01 = Matrix(-I(n)); b01 = zeros(n,1); c01 = 1;
+# L1 = 1; P1 = Array{Any}(undef, L1); ξ1 = Array{Any}(undef, L1);
+# for i = 1:L1-1
+#     P1[i] = rand(n,n); ξ1[i] = rand(n,1);
+#     for j = 1:n
+#         P1[i][j,j] = 1
+#     end
+# end
+# P1[L1] = rand(2,n); ξ1[L1] = rand(2,1); P1[L1][1,1] = 1; P1[L1][2,2] = 1;
+# # ξ1[L1] = zeros(2,1)
+#
+# # plot original graph and image under ReLU
+# p11 = OuterApproximationPlotSampling(Q01, b01, c01, 1, P1, ξ1, "tong", L1);
+# p12 = OuterApproximationPlotSampling(Q01, b01, c01, 2, P1, ξ1, "tong", L1);
+# p21 = OuterApproximationPlotSampling(Q01, b01, c01, 1, P1, ξ1, "split", L1);
+# p22 = OuterApproximationPlotSampling(Q01, b01, c01, 2, P1, ξ1, "split", L1);
+# p31, m = OuterApproximationPlotSampling(Q01, b01, c01, 1, P1, ξ1, "Morari", L1);
+# p32 = OuterApproximationPlotSampling(Q01, b01, c01, 2, P1, ξ1, "sublevel", L1, lv=2, morari=m, meth="random");
+#
+# plot(p11, p21, p31, p12, p22, p32, layout = grid(2,3), fmt = :png)
+
+
+
+
+
+# n = 10; Q01 = Matrix(-I(n)); b01 = zeros(n,1); c01 = 1;
+# L1 = 2; P1 = Array{Any}(undef, L1); ξ1 = Array{Any}(undef, L1);
+# for i = 1:L1-1
+#     P1[i] = randn(n,n); ξ1[i] = randn(n,1);
+#     for j = 1:n
+#         P1[i][j,j] = 1
+#     end
+# end
+# P1[L1] = rand(2,n); ξ1[L1] = rand(2,1); P1[L1][1,1] = 1; P1[L1][2,2] = 1;
+#
+# p11 = plot();
+# p21, m = OuterApproximationPlotSampling(Q01, b01, c01, 1, P1, ξ1, "Morari", L1);
+# p31 = plot();
+# p12 = plot();
+# p22 = OuterApproximationPlotSampling(Q01, b01, c01, 2, P1, ξ1, "sublevel", L1, lv=2, morari=m);
+# p32 = plot();
+# p13 = OuterApproximationPlotSampling(Q01, b01, c01, 2, P1, ξ1, "sublevel", L1, lv=3, morari=m);
+# p23 = OuterApproximationPlotSampling(Q01, b01, c01, 2, P1, ξ1, "sublevel", L1, lv=5, morari=m);
+# p33 = OuterApproximationPlotSampling(Q01, b01, c01, 2, P1, ξ1, "sublevel", L1, lv=7, morari=m);
+# p23 = plot(); p33 = plot();
+#
+# plot(p11, p21, p31, p12, p22, p32, p13, p23, p33, layout = grid(3,3), fmt = :png)
+
+
+
+
+
+n = 20; Q10 = Matrix(-I(n)); b10 = zeros(n,1); c10 = 1;
+L10 = 2; P10 = Array{Any}(undef, L10); ξ10 = Array{Any}(undef, L10);
+for i = 1:L10-1
+    P10[i] = randn(n,n)*0.5; ξ10[i] = randn(n,1);
     for j = 1:n
-        P1[i][j,j] = 1
+        P10[i][j,j] = 1
     end
 end
-P1[L1] = rand(2,n); ξ1[L1] = rand(2,1); P1[L1][1,1] = 1; P1[L1][2,2] = 1;
+P10[L10] = rand(2,n)*0.5; ξ10[L10] = rand(2,1); P10[L10][1,1] = 1; P10[L10][2,2] = 1;
 
 # plot original graph and image under ReLU
-p11 = OuterApproximationPlotSampling(Q01, b01, c01, 1, P1, ξ1, "tong", L1);
-p12 = OuterApproximationPlotSampling(Q01, b01, c01, 2, P1, ξ1, "tong", L1);
-p21 = OuterApproximationPlotSampling(Q01, b01, c01, 1, P1, ξ1, "split", L1);
-p22 = OuterApproximationPlotSampling(Q01, b01, c01, 2, P1, ξ1, "split", L1);
-p31, m = OuterApproximationPlotSampling(Q01, b01, c01, 1, P1, ξ1, "Morari", L1);
-p32 = OuterApproximationPlotSampling(Q01, b01, c01, 2, P1, ξ1, "sublevel", L1, lv=2, morari=m);
+p11, m = OuterApproximationPlotSampling(Q10, b10, c10, 1, P10, ξ10, "Morari", L10);
+# p21 = OuterApproximationPlotSampling(Q10, b10, c10, 1, P10, ξ10, "jean", L10);
+p21 = OuterApproximationPlotSampling(Q10, b10, c10, 2, P10, ξ10, "sublevel", L10, lv=2, morari=m, meth="cycle_v");
+p31 = OuterApproximationPlotSampling(Q10, b10, c10, 2, P10, ξ10, "sublevel", L10, lv=2, morari=m, meth="order_v");
+p12 = OuterApproximationPlotSampling(Q10, b10, c10, 2, P10, ξ10, "sublevel", L10, lv=3, morari=m, meth="order_v");
+# p22 = OuterApproximationPlotSampling(Q10, b10, c10, 2, P10, ξ10, "jean", L10);
+p22 = OuterApproximationPlotSampling(Q10, b10, c10, 2, P10, ξ10, "sublevel", L10, lv=4, morari=m, meth="order_v");
+p32 = OuterApproximationPlotSampling(Q10, b10, c10, 2, P10, ξ10, "sublevel", L10, lv=5, morari=m, meth="order_v");
+p13 = OuterApproximationPlotSampling(Q10, b10, c10, 2, P10, ξ10, "sublevel", L10, lv=6, morari=m, meth="order_v");
+p23 = OuterApproximationPlotSampling(Q10, b10, c10, 2, P10, ξ10, "sublevel", L10, lv=7, morari=m, meth="order_v");
+p33 = OuterApproximationPlotSampling(Q10, b10, c10, 2, P10, ξ10, "sublevel", L10, lv=8, morari=m, meth="order_v");
 
-plot(p11, p21, p31, p12, p22, p32, layout = grid(2,3), fmt = :png)
+plot(p11, p21, p31, p12, p22, p32, p13, p23, p33, layout = Plots.grid(3,3), fmt = :png)
+
+
+# A = zeros(9,9);
+# for i = 1:3
+#     for j = i:6
+#         A[i,j] = 1; A[j,i] = 1;
+#     end
+# end
+# for i = 4:9
+#     for j = 7:9
+#         A[i,j] = 1; A[j,i] = 1;
+#     end
+# end
+# cliques, NumElem, A_new, g, g_new = ChordalExtension(A, turn="on")
