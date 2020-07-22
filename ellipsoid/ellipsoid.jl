@@ -267,8 +267,12 @@ function OuterApproximationSublevel(Q0, b0, c0, P, ξ, lv; method="cycle")
         end
         for i = 1:l
             for j = 1:p[i+1]
-                for k = dx[i]:dx[i+1]-lv
-                    set = collect(k+1:k+lv)
+                for k = [dx[i]+lv*z for z in 0:Int(ceil((dx[i+1]-dx[i])/lv))-1]
+                    if k+lv <= dx[i+1]
+                        set = collect(k+1:k+lv)
+                    else
+                        set = collect(k+1:dx[i+1])
+                    end
                     for s = dx[i]+1:dx[i+1]
                         if !(s in set) && (length(set) != p[i])
                             set_bis = sort(vcat(set, s))
@@ -281,36 +285,36 @@ function OuterApproximationSublevel(Q0, b0, c0, P, ξ, lv; method="cycle")
                             @constraint(model, σ00 .>= 0)
                         end
                     end
-                    X1 = monomials([x[k+1:k+lv]; x[dx[i+1]+j]], 0:2*1); σ1 = @variable(model, [1:1], Poly(X1));
-                    X2 = monomials([x[k+1:k+lv]; x[dx[i+1]+j]], 0:2*1); σ2 = @variable(model, [1:1], Poly(X2));
-                    X3 = monomials([x[k+1:k+lv]; x[dx[i+1]+j]], 0:2*1); σ3 = @variable(model, [1:1], Poly(X3));
+                    X1 = monomials([x[set]; x[dx[i+1]+j]], 0:2*1); σ1 = @variable(model, [1:1], Poly(X1));
+                    X2 = monomials([x[set]; x[dx[i+1]+j]], 0:2*1); σ2 = @variable(model, [1:1], Poly(X2));
+                    X3 = monomials([x[set]; x[dx[i+1]+j]], 0:2*1); σ3 = @variable(model, [1:1], Poly(X3));
                     obj = obj - σ1[1] * (x[dx[i+1]+j]*(x[dx[i+1]+j]-P[i][j,:]'*x[dx[i]+1:dx[i+1]]-ξ[i][j])) - σ2[1] * x[dx[i+1]+j] - σ3[1] * (x[dx[i+1]+j]-P[i][j,:]'*x[dx[i]+1:dx[i+1]]-ξ[i][j])
                     @constraints(model, begin
                         σ2 .>= 0; σ3 .>= 0;
                     end)
                 end
-                for k = dx[i+1]-lv+1:dx[i+1]-1
-                    set = vcat(collect(1:lv-dx[i+1]+k), collect(k+1:dx[i+1]))
-                    for s = dx[i]+1:dx[i+1]
-                        if !(s in set) && (length(set) != p[i])
-                            set_bis = sort(vcat(set, s))
-                            X00 = monomials([x[set_bis]; x[dx[i+1]+j]], 0:2*2); σ00 = @variable(model, [1:1], Poly(X00));
-                            obj += - σ00[1]
-                            @constraint(model, σ00 .>= 0)
-                        elseif length(set) == p[i]
-                            X00 = monomials([x[set]; x[dx[i+1]+j]], 0:2*2); σ00 = @variable(model, [1:1], Poly(X00));
-                            obj += - σ00[1]
-                            @constraint(model, σ00 .>= 0)
-                        end
-                    end
-                    X1 = monomials([x[1:lv-dx[i+1]+k]; x[k+1:dx[i+1]]; x[dx[i+1]+j]], 0:2*1); σ1 = @variable(model, [1:1], Poly(X1));
-                    X2 = monomials([x[1:lv-dx[i+1]+k]; x[k+1:dx[i+1]]; x[dx[i+1]+j]], 0:2*1); σ2 = @variable(model, [1:1], Poly(X2));
-                    X3 = monomials([x[1:lv-dx[i+1]+k]; x[k+1:dx[i+1]]; x[dx[i+1]+j]], 0:2*1); σ3 = @variable(model, [1:1], Poly(X3));
-                    obj = obj - σ00[1] - σ1[1] * (x[dx[i+1]+j]*(x[dx[i+1]+j]-P[i][j,:]'*x[dx[i]+1:dx[i+1]]-ξ[i][j])) - σ2[1] * x[dx[i+1]+j] - σ3[1] * (x[dx[i+1]+j]-P[i][j,:]'*x[dx[i]+1:dx[i+1]]-ξ[i][j])
-                    @constraints(model, begin
-                        σ2 .>= 0; σ3 .>= 0;
-                    end)
-                end
+                # for k = dx[i+1]-lv+1:dx[i+1]-1
+                #     set = vcat(collect(1:lv-dx[i+1]+k), collect(k+1:dx[i+1]))
+                #     for s = dx[i]+1:dx[i+1]
+                #         if !(s in set) && (length(set) != p[i])
+                #             set_bis = sort(vcat(set, s))
+                #             X00 = monomials([x[set_bis]; x[dx[i+1]+j]], 0:2*2); σ00 = @variable(model, [1:1], Poly(X00));
+                #             obj += - σ00[1]
+                #             @constraint(model, σ00 .>= 0)
+                #         elseif length(set) == p[i]
+                #             X00 = monomials([x[set]; x[dx[i+1]+j]], 0:2*2); σ00 = @variable(model, [1:1], Poly(X00));
+                #             obj += - σ00[1]
+                #             @constraint(model, σ00 .>= 0)
+                #         end
+                #     end
+                #     X1 = monomials([x[set]; x[dx[i+1]+j]], 0:2*1); σ1 = @variable(model, [1:1], Poly(X1));
+                #     X2 = monomials([x[set]; x[dx[i+1]+j]], 0:2*1); σ2 = @variable(model, [1:1], Poly(X2));
+                #     X3 = monomials([x[set]; x[dx[i+1]+j]], 0:2*1); σ3 = @variable(model, [1:1], Poly(X3));
+                #     obj = obj - σ00[1] - σ1[1] * (x[dx[i+1]+j]*(x[dx[i+1]+j]-P[i][j,:]'*x[dx[i]+1:dx[i+1]]-ξ[i][j])) - σ2[1] * x[dx[i+1]+j] - σ3[1] * (x[dx[i+1]+j]-P[i][j,:]'*x[dx[i]+1:dx[i+1]]-ξ[i][j])
+                #     @constraints(model, begin
+                #         σ2 .>= 0; σ3 .>= 0;
+                #     end)
+                # end
             end
             for j = 1:p[i+1]-1
                 for k = j+1:p[i+1]
@@ -328,7 +332,7 @@ function OuterApproximationSublevel(Q0, b0, c0, P, ξ, lv; method="cycle")
                                 @constraint(model, σ00 .>= 0)
                             end
                         end
-                        X1 = monomials([x[s+1:s+lv]; x[dx[i+1]+j]; x[dx[i+1]+k]], 0:2*0); σ1 = @variable(model, [1:1], Poly(X1));
+                        X1 = monomials([x[set]; x[dx[i+1]+j]; x[dx[i+1]+k]], 0:2*0); σ1 = @variable(model, [1:1], Poly(X1));
                         obj = obj - σ00[1] + σ1[1]*((x[dx[i+1]+k] - x[dx[i+1]+j])^2 - (x[dx[i+1]+k] - x[dx[i+1]+j])*(P[i][k,:]'*x[dx[i]+1:dx[i+1]] + ξ[i][k] - P[i][j,:]'*x[dx[i]+1:dx[i+1]] - ξ[i][j]))
                         @constraint(model, σ1 .>= 0)
                     end
@@ -346,7 +350,7 @@ function OuterApproximationSublevel(Q0, b0, c0, P, ξ, lv; method="cycle")
                                 @constraint(model, σ00 .>= 0)
                             end
                         end
-                        X1 = monomials([x[1:lv-dx[i+1]+s]; x[s+1:dx[i+1]]; x[dx[i+1]+j]; x[dx[i+1]+k]], 0:2*0); σ1 = @variable(model, [1:1], Poly(X1));
+                        X1 = monomials([x[set]; x[dx[i+1]+j]; x[dx[i+1]+k]], 0:2*0); σ1 = @variable(model, [1:1], Poly(X1));
                         obj = obj - σ00[1] + σ1[1]*((x[dx[i+1]+k] - x[dx[i+1]+j])^2 - (x[dx[i+1]+k] - x[dx[i+1]+j])*(P[i][k,:]'*x[dx[i]+1:dx[i+1]] + ξ[i][k] - P[i][j,:]'*x[dx[i]+1:dx[i+1]] - ξ[i][j]))
                         @constraint(model, σ1 .>= 0)
                     end
@@ -810,7 +814,7 @@ end
 
 
 
-n = 20; Q10 = Matrix(-I(n)); b10 = zeros(n,1); c10 = 1;
+n = 10; Q10 = Matrix(-I(n)); b10 = zeros(n,1); c10 = 1;
 L10 = 2; P10 = Array{Any}(undef, L10); ξ10 = Array{Any}(undef, L10);
 for i = 1:L10-1
     P10[i] = randn(n,n)*0.5; ξ10[i] = randn(n,1);
