@@ -484,7 +484,7 @@ function LocalizationMatrix(model, pol, basis, order, SetVars)
                     # i = i+1
                     idx = findall(!iszero, pol[k,2:end])
                     idx_orig = []
-                    for t = 1:n
+                    for t = 1:size(SetVars["MomConst"][i], 1)
                         idx_orig = vcat(idx_orig, findall(!iszero, SetVars["MomConst"][i][t,:]))
                     end
                     mem = 0
@@ -664,7 +664,7 @@ function LocalizationMatrix(model, pol, basis, order, SetVars)
                     end
                     if sum(C) != 0
                         idx_orig = []
-                        for t = 1:n
+                        for t = 1:size(SetVars["LocConst"][i], 1)
                             idx_orig = vcat(idx_orig, findall(!iszero, SetVars["LocConst"][i][t,:]))
                         end
                         for j = 1:size(SetVars["LocPol"][i],1)

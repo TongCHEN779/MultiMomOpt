@@ -1334,11 +1334,11 @@ function solve_moment_mac(A, options)
     OptVal, running_time, stat = solve_moment_manual(typ, obj, MomConst, LocConst, options);
     return OptVal, running_time, stat
 end
-# vars = matread("mac_100_2.mat");
+# vars = matread("maxcut_g05_60.0.mat");
 # A = vars["A"];
 # # n = 10; Random.seed!(1); A = rand(n,n);
 # options = Dict();
-# options["level"] = 8; options["clique"] = "off"; options["ord"] = 2; options["silent"] = false; options["quad"] = true; OptVal, running_time, status = solve_moment_mac(A, options)yu7
+# options["level"] = 2; options["clique"] = "off"; options["ord"] = 2; options["silent"] = false; options["quad"] = true; OptVal, running_time, status = solve_moment_mac(A, options)
 
 # ["maxcut_g05_60.0.mat" "maxcut_g05_80.0.mat" "maxcut_g05_100.0.mat" "maxcut_pm1d_80.0.mat" "maxcut_pm1d_100.0.mat" "maxcut_pm1s_80.0.mat" "maxcut_pm1s_100.0.mat" "maxcut_pw01_100.0.mat" "maxcut_pw05_100.0.mat" "maxcut_pw09_100.0.mat" "maxcut_w01_100.0.mat" "maxcut_w05_100.0.mat" "maxcut_w09_100.0.mat"]
 # obj = Dict(); t = Dict(); options = Dict(); options["range"] = "local"; options["clique"] = "off"; options["ord"] = 2; options["silent"] = true; options["quad"] = true;
