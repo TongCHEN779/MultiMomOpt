@@ -5,6 +5,7 @@ using MosekTools
 using LinearAlgebra
 using Printf
 using MathOptInterface
+using StatsBase
 
 # compute the outer approximation ellipsoid
 function OuterApproximation(Q0, b0, c0, ord, P, ξ, method)
@@ -158,7 +159,7 @@ function OuterApproximation(Q0, b0, c0, ord, P, ξ, method)
     # solve
     MOI.set(model, MOI.Silent(), true);
     optimize!(model)
-    @printf("Optimal value: %.2f, termination status: %s, primal status: %s, dual status: %s.\n", value.(lower_bound), termination_status(model), primal_status(model), dual_status(model))
+    @printf("Optimal value: %.2f, termination status: %s, primal status: %s, dual status: %s, solving time: %.2f.\n", value.(lower_bound), termination_status(model), primal_status(model), dual_status(model), solve_time(model))
     # println(value.(Q)); println(value.(b)); println(value.(c))
     # return value.(-Q*Q), value.(-2 .* Q*b), value.(1 .- b'*b)
     return value.(Q), value.(b), value.(c), value.(lower_bound)
@@ -267,7 +268,7 @@ function OuterApproximationSublevel(Q0, b0, c0, P, ξ, lv; method="cycle")
         end
         for i = 1:l
             for j = 1:p[i+1]
-                for k = [dx[i]+lv*z for z in 0:Int(ceil((dx[i+1]-dx[i])/lv))-1]
+                for k = [dx[i]+lv*z for z in 0:Int(ceil((dx[i+1]-dx[i])/lv))-1] # k = dx[i]:dx[i+1]-lv
                     if k+lv <= dx[i+1]
                         set = collect(k+1:k+lv)
                     else

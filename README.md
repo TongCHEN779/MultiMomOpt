@@ -1,8 +1,8 @@
 # MultiMomOpt
 Multi-order and sub-level hierarchy based on standard Lasserre's hierarchy
 
-# Julia version
-Dependencies: JuMP, AMD, LinearAlgebra, MAT, SparseArrays, LightGraphs, GraphPlot, DynamicPolynomials, MosekTools, Printf, TSSOS, Dualization, Random
+## Dependencies
+JuMP, AMD, LinearAlgebra, MAT, SparseArrays, LightGraphs, GraphPlot, DynamicPolynomials, MosekTools, Printf, TSSOS, Dualization, Random
 
 ## Usage
 Maximize x1*x2, subject to x1^2+x2^2<=1.
@@ -115,3 +115,34 @@ OptVal, running_time, status = solve_moment_cert(A, b, c, x00, eps, options);
 
 ## References
 The Lipschitz Constant Estimation problem is referred to [Semialgebraic Optimization for Lipschitz Constants of ReLU Networks](https://arxiv.org/abs/2002.03657). The Robustness Certification problem is referred to [Semidefinite relaxations for certifying robustness to adversarial examples](https://arxiv.org/abs/1811.01057). For more information, contact me: tchen@laas.fr.
+
+# Ellipsoid Problem
+Finding the minimum volume ellipsoid of the image under ReLU networks
+
+## Dependencies
+Plots, SumOfSquares, DynamicPolynomials, MosekTools, LinearAlgebra, Printf, MathOptInterface, StatsBase
+
+## Usage
+```Julia
+n = 10; Q10 = Matrix(-I(n)); b10 = zeros(n,1); c10 = 1;
+L10 = 2; P10 = Array{Any}(undef, L10); ξ10 = Array{Any}(undef, L10);
+for i = 1:L10-1
+    P10[i] = randn(n,n)*0.5; ξ10[i] = randn(n,1);
+    for j = 1:n
+        P10[i][j,j] = 1
+    end
+end
+P10[L10] = rand(2,n)*0.5; ξ10[L10] = rand(2,1); P10[L10][1,1] = 1; P10[L10][2,2] = 1;
+
+p11, m = OuterApproximationPlotSampling(Q10, b10, c10, 1, P10, ξ10, "Morari", L10);
+p21 = OuterApproximationPlotSampling(Q10, b10, c10, 2, P10, ξ10, "sublevel", L10, lv=2, morari=m, meth="cycle_v");
+p31 = OuterApproximationPlotSampling(Q10, b10, c10, 2, P10, ξ10, "sublevel", L10, lv=2, morari=m, meth="order_v");
+p12 = OuterApproximationPlotSampling(Q10, b10, c10, 2, P10, ξ10, "sublevel", L10, lv=3, morari=m, meth="order_v");
+p22 = OuterApproximationPlotSampling(Q10, b10, c10, 2, P10, ξ10, "sublevel", L10, lv=4, morari=m, meth="order_v");
+p32 = OuterApproximationPlotSampling(Q10, b10, c10, 2, P10, ξ10, "sublevel", L10, lv=5, morari=m, meth="order_v");
+p13 = OuterApproximationPlotSampling(Q10, b10, c10, 2, P10, ξ10, "sublevel", L10, lv=6, morari=m, meth="order_v");
+p23 = OuterApproximationPlotSampling(Q10, b10, c10, 2, P10, ξ10, "sublevel", L10, lv=7, morari=m, meth="order_v");
+p33 = OuterApproximationPlotSampling(Q10, b10, c10, 2, P10, ξ10, "sublevel", L10, lv=8, morari=m, meth="order_v");
+
+plot(p11, p21, p31, p12, p22, p32, p13, p23, p33, layout = Plots.grid(3,3), fmt = :png)
+```
