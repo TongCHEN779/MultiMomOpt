@@ -146,3 +146,6 @@ p33 = OuterApproximationPlotSampling(Q10, b10, c10, 2, P10, ξ10, "sublevel", L1
 
 plot(p11, p21, p31, p12, p22, p32, p13, p23, p33, layout = Plots.grid(3,3), fmt = :png)
 ```
+
+## References
+[Reach-SDP: Reachability Analysis of Closed-Loop Systems with Neural Network Controllers via Semidefinite Programming](https://arxiv.org/abs/2004.07876). For more information, contact me: tchen@laas.fr.
