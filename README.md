@@ -1,15 +1,13 @@
 # MultiMomOpt
 Multi-order and sub-level hierarchy based on standard Lasserre's hierarchy
 
-## Matlab version
-
-## Julia version
+# Julia version
 Dependencies: JuMP, AMD, LinearAlgebra, MAT, SparseArrays, LightGraphs, GraphPlot, DynamicPolynomials, MosekTools, Printf, TSSOS, Dualization, Random
 
-### Usage
+## Usage
 Maximize x1*x2, subject to x1^2+x2^2<=1.
 
-#### Do it manually
+### Do it manually
 ```Julia
 using MultiMomOpt
 typ = "max"; obj = [1 1 1];
@@ -28,7 +26,7 @@ LocConst[1]["ord"] = 1;
 OptVal, running_time, status = solve_moment_manual(typ, obj, MomConst, LocConst, options);
 ```
 
-#### Do it automatically
+### Do it automatically
 ```Julia
 using MultiMomOpt
 @polyvar x[1:2];
@@ -42,10 +40,10 @@ options = Dict(); options["silent"] = true; options["quad"] = false;
 OptVal, running_time, status = solve_moment_auto(typ, var, obj, MomConst, LocConst, options);
 ```
 
-### Examples
-#### MAXCUT problem
-##### Statement
-##### Usage
+## Examples
+### MAXCUT problem
+#### Statement
+#### Usage
 ```Julia
 using MultiMomOpt
 vars = matread("maxcut.mat");
@@ -55,9 +53,9 @@ options["level"] = 3; options["clique"] = "off"; options["ord"] = 2; options["si
 OptVal, running_time, status = solve_moment_maxcut(A, W, options)
 ```
 
-#### MAX-CLIQUE problem
-##### Statement
-##### Usage
+### MAX-CLIQUE problem
+#### Statement
+#### Usage
 ```Julia
 using MultiMomOpt
 vars = matread("mac_5.mat");
@@ -67,9 +65,9 @@ options["level"] = 3; options["clique"] = "off"; options["ord"] = 2; options["si
 OptVal, running_time, status = solve_moment_mac(A, options)
 ```
 
-#### Mixed Integer Programming (MIP)
-##### Statement
-##### Usage
+### Mixed Integer Programming (MIP)
+#### Statement
+#### Usage
 ```Julia
 using MultiMomOpt
 vars = matread("mip.mat");
@@ -79,9 +77,9 @@ options["level"] = 15; options["clique"] = "off"; options["ord"] = 2; options["s
 OptVal, running_time, status = solve_moment_mip(A, options);
 ```
 
-#### QCQP problem
-##### Statement
-##### Usage
+### QCQP problem
+#### Statement
+#### Usage
 ```Julia
 using MultiMomOpt
 vars = matread("qcqp_5_1.mat");
@@ -91,9 +89,9 @@ options["level"] = 3; options["clique"] = "off"; options["ord"] = 2; options["si
 OptVal, running_time, status = solve_moment_qcqp(A, b, options)
 ```
 
-#### Lipschitz Constant Estimation problem (one hidden layer)
-##### Statement
-##### Usage
+### Lipschitz Constant Estimation problem (one hidden layer)
+#### Statement
+#### Usage
 ```Julia
 using MultiMomOpt
 vars = matread("lip_test.mat");
@@ -103,9 +101,9 @@ options["range"] = "global"; options["level"] = 6; options["clique"] = "off"; op
 OptVal, running_time, status = solve_moment_lip_one_layer(A, b, c, x00, eps, options);
 ```
 
-#### Robustness Certification problem
-##### Statement
-##### Usage
+### Robustness Certification problem
+#### Statement
+#### Usage
 ```Julia
 using MultiMomOpt
 vars = matread("lip_test.mat");
