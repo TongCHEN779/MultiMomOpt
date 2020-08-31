@@ -2,7 +2,7 @@
 Multi-order and sub-level hierarchy based on standard Lasserre's hierarchy
 
 ## Dependencies
-JuMP, AMD, LinearAlgebra, MAT, SparseArrays, LightGraphs, GraphPlot, DynamicPolynomials, MosekTools, Printf, TSSOS, Dualization, Random
+JuMP, AMD, LinearAlgebra, MAT, SparseArrays, LightGraphs, GraphPlot, DynamicPolynomials, MosekTools, Printf, Dualization, Random
 
 ## Usage
 Maximize x1*x2, subject to x1^2+x2^2<=1.
