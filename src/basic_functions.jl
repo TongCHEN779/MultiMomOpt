@@ -120,7 +120,7 @@ function Chordal0032()
     return cliques, sizes
 end
 
-function gen_basis(n, d)
+function GenBasis(n, d)
     num = binomial(n+d, d);
     basis = zeros(Int64, num, n);
     i = 0; t = 1;
@@ -412,7 +412,7 @@ function MomentMatrix(model, basis, order, mom, vars; ObjQuad = true)
             if !isassigned(vars["MomMat"], 1) # the first moment matrix
                 matrix = @variable(model, [1:n+1, 1:n+1], Symmetric)
             else # check repeated monomials
-                B = gen_basis(n, order)*basis; # 1st-order monomial basis
+                B = GenBasis(n, order)*basis; # 1st-order monomial basis
                 matrix = Array{GenericAffExpr{Float64,VariableRef},2}(undef, n+1, n+1)
                 # by symmetry, i and j are indices in the current moment matrix
                 for i = 1:n+1
@@ -463,7 +463,7 @@ function MomentMatrix(model, basis, order, mom, vars; ObjQuad = true)
     else # higher-order moment matrices
         m1 = binomial(n+1*order, 1*order); # number of monomials of degree <= order
         m2 = binomial(n+2*order, 2*order); # number of monomials of degree <= 2*order
-        B = gen_basis(n, 2*order)*basis; # 2*order-degree monomial basis
+        B = GenBasis(n, 2*order)*basis; # 2*order-degree monomial basis
         matrix = spzeros(m1, m1);
         file = matopen("Moment_and_Localizing_Matrices.mat");
         matrix_t = read(file, "moment_$(n)_$(order)"); # M = ∑y_i B_i, matrix_t is {B_i}
@@ -575,7 +575,7 @@ function LocalizingMatrix(model, pol, basis, order, mom, loc, vars)
     n = size(basis, 1); # number of variables
     m1 = binomial(n+1*order,1*order); # number of monomials of degree <= order
     m2 = binomial(n+2*order,2*order); # number of monomials of degree <= 2*order
-    B = gen_basis(n,2*order)*basis; # 2*order-degree monomial basis
+    B = GenBasis(n,2*order)*basis; # 2*order-degree monomial basis
     # M = ∑y_i B_i, matrix_t is {B_i}
     if order == 0
         matrix_t = 1;

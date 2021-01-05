@@ -229,7 +229,7 @@ function solve_moment_lip(A, b, c, x00, e, options; cliques = [], sizes = [])
         error("NotImplementedError")
     end
     @printf("\n%s LCEP problem: clique %s, order %d, level %d, depth %d\n", uppercasefirst(options["range"]), uppercase(options["clique"]), options["ord"], options["level"], options["depth"]);
-    OptVal, running_time, stat = solve_moment_manual(typ, obj, MomConst, LocConst, options; cliques = cliques, sizes = sizes);
+    OptVal, running_time, stat = solve_moment(typ, obj, MomConst, LocConst, options; cliques = cliques, sizes = sizes);
     return OptVal, running_time, stat
 end
 
@@ -434,7 +434,7 @@ function solve_moment_cert(A, b, c, x00, eps, options; cliques = [], sizes = [])
         error("NotImplementedError")
     end
     @printf("\n%s Cert problem: clique %s, order %d, level %d, depth %d\n", uppercasefirst(options["range"]), uppercase(options["clique"]), options["ord"], options["level"], options["level"])
-    OptVal, running_time, stat = solve_moment_manual(typ, obj, MomConst, LocConst, options; cliques=cliques, sizes=sizes);
+    OptVal, running_time, stat = solve_moment(typ, obj, MomConst, LocConst, options; cliques=cliques, sizes=sizes);
     return OptVal, running_time, stat
 end
 
@@ -605,7 +605,7 @@ function solve_moment_maxcut(A, W, options; cliques = [], sizes = [], M = [])
         end
     end
     @printf("\nMAX-CUT Problem: %d vertices, %d edges, clique %s, order %d, level %d, depth %d\n", n, (sum(Matrix(1*(A.!=0))) - sum(diag(Matrix(1*(A.!=0)))))/2 + sum(diag(Matrix(1*(A.!=0)))), uppercase(options["clique"]), options["ord"], options["level"], options["level"])
-    OptVal, running_time, stat, M = solve_moment_manual(typ, obj, MomConst, LocConst, options; cliques = cliques, sizes = sizes);
+    OptVal, running_time, stat, M = solve_moment(typ, obj, MomConst, LocConst, options; cliques = cliques, sizes = sizes);
     return OptVal, running_time, stat, M
 end
 
@@ -716,7 +716,7 @@ function solve_moment_mac(A, options)
         end
     end
     @printf("\nMAXIMUM-CLIQUE Problem: %d vertices, %d edges, order %d, level %d, depth %d\n", n, (sum(Matrix(1*(A.!=0))) - sum(diag(Matrix(1*(A.!=0)))))/2 + sum(diag(Matrix(1*(A.!=0)))), options["ord"], options["level"], options["depth"])
-    OptVal, running_time, stat = solve_moment_manual(typ, obj, MomConst, LocConst, options);
+    OptVal, running_time, stat = solve_moment(typ, obj, MomConst, LocConst, options);
     return OptVal, running_time, stat
 end
 
@@ -887,7 +887,7 @@ function solve_moment_mip(A, options; cliques = [], sizes = [], M = [])
         end
     end
     @printf("\nMIP Problem: %d vertices, %d edges, clique %s, order %d, level %d, depth %d\n", n, (sum(Matrix(1*(A.!=0))) - sum(diag(Matrix(1*(A.!=0)))))/2 + sum(diag(Matrix(1*(A.!=0)))), uppercase(options["clique"]), options["ord"], options["level"], options["depth"])
-    OptVal, running_time, stat, M = solve_moment_manual(typ, obj, MomConst, LocConst, options; cliques = cliques, sizes = sizes);
+    OptVal, running_time, stat, M = solve_moment(typ, obj, MomConst, LocConst, options; cliques = cliques, sizes = sizes);
     return OptVal, running_time, stat, M
 end
 
@@ -999,7 +999,7 @@ function solve_moment_qcqp(A, b, options)
         end
     end
     @printf("\nQCQP problem: %d variables, %d entries, clique %s, order %d, level %d, depth %d\n", n, (sum(Matrix(1*(A.!=0))) - sum(diag(Matrix(1*(A.!=0)))))/2 + sum(diag(Matrix(1*(A.!=0)))), uppercase(options["clique"]), options["ord"], options["level"], options["depth"])
-    OptVal, running_time, stat = solve_moment_manual(typ, obj, MomConst, LocConst, options);
+    OptVal, running_time, stat = solve_moment(typ, obj, MomConst, LocConst, options);
     return OptVal, running_time, stat
 end
 
@@ -1167,7 +1167,7 @@ function solve_moment_qplib_BinaryAssignment(obj, constr, type, var,  options)
         error("NotImplementedError")
     end
     @printf("\nQCQP problem: %d variables, %d entries, clique %s, order %d, level %d, depth %d\n", n, (sum(Matrix(1*(obj["A"].!=0))) - sum(diag(Matrix(1*(obj["A"].!=0)))))/2 + sum(diag(Matrix(1*(obj["A"].!=0)))), uppercase(options["clique"]), options["ord"], options["level"], options["depth"])
-    OptVal, running_time, stat = solve_moment_manual(typ, objective, MomConst, LocConst, options);
+    OptVal, running_time, stat = solve_moment(typ, objective, MomConst, LocConst, options);
     return OptVal, running_time, stat
 end
 
@@ -1333,7 +1333,7 @@ function solve_moment_qplib_QCQP(obj, constr, type, var,  options)
         end
     end
     @printf("\nQCQP problem: %d variables, %d entries, clique %s, order %d, level %d, depth %d\n", n, (sum(Matrix(1*(obj["A"].!=0))) - sum(diag(Matrix(1*(obj["A"].!=0)))))/2 + sum(diag(Matrix(1*(obj["A"].!=0)))), uppercase(options["clique"]), options["ord"], options["level"], options["depth"])
-    OptVal, running_time, stat = solve_moment_manual(typ, objective, MomConst, LocConst, options);
+    OptVal, running_time, stat = solve_moment(typ, objective, MomConst, LocConst, options);
     return OptVal, running_time, stat
 end
 
@@ -1494,6 +1494,6 @@ function solve_moment_qplib_binary(obj, constr, type, var,  options)
         end
     end
     @printf("\nQCQP problem: %d variables, %d entries, clique %s, order %d, level %d, depth %d\n", n, (sum(Matrix(1*(obj["A"].!=0))) - sum(diag(Matrix(1*(obj["A"].!=0)))))/2 + sum(diag(Matrix(1*(obj["A"].!=0)))), uppercase(options["clique"]), options["ord"], options["level"], options["depth"])
-    OptVal, running_time, stat = solve_moment_manual(typ, objective, MomConst, LocConst, options);
+    OptVal, running_time, stat = solve_moment(typ, objective, MomConst, LocConst, options);
     return OptVal, running_time, stat
 end

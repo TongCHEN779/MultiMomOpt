@@ -1,4 +1,4 @@
-function solve_moment_manual(typ, obj, MomConst, LocConst, options; cliques = [], sizes = [])
+function solve_moment(typ, obj, MomConst, LocConst, options; cliques = [], sizes = [])
     running_time = Dict();
     start = time();
     # for older JuMP version: model = Model(with_optimizer(Mosek.Optimizer))
