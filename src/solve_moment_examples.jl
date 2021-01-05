@@ -35,8 +35,6 @@ function solve_moment_lip_one_layer(A, b, c, x00, e, options; cliques = [], size
             LocConst = vcat(LocConst, Array{Any}(undef, 1));
             LocConst[NumLoc] = Dict();
             LocConst[NumLoc]["pol"] = sparse([lx[i]*ux[i]*100 zeros(1,n); -(lx[i]+ux[i])*10 E[i,:]'; 1*1 2*E[i,:]']);
-            # LocConst[NumLoc]["pol"] = sparse([-1 E[i,:]'; 1 2*E[i,:]']); #x(x-1)<=0
-            # LocConst[NumLoc]["pol"] = sparse([-1 zeros(1,n); 1 2*E[i,:]']); #x^2<=1
             LocConst[NumLoc]["basis"] = sparse(I(n));
             LocConst[NumLoc]["typ"] = "<=";
             LocConst[NumLoc]["ord"] = 0;
@@ -63,8 +61,6 @@ function solve_moment_lip_one_layer(A, b, c, x00, e, options; cliques = [], size
             LocConst = vcat(LocConst, Array{Any}(undef, 1));
             LocConst[NumLoc] = Dict();
             LocConst[NumLoc]["pol"] = sparse([-1/2*b[1][i]*10 zeros(1,n); b[1][i]*10 E[d0+i,:]'; [-1/2*A[1][i,:] E[1:d0, :]]; [A[1][i,:] E[1:d0, 1:d0+i-1] ones(d0, 1) E[1:d0, d0+i+1: 2*d0+d]]]);
-            # LocConst[NumLoc]["pol"] = sparse([-1/2*(b[1][i]+(A[1][i,:]'*lx)[1]) zeros(1,n); b[1][i]+(A[1][i,:]'*lx)[1] E[d0+i,:]'; -1/2*A[1][i,:].*(ux-lx) E[1:d0, :]; A[1][i,:].*(ux-lx) E[1:d0, 1:d0+i-1] ones(d0, 1) E[1:d0, d0+i+1: 2*d0+d]]); #(y-1/2)*(Ax(ux-lx)+A*lx+b)>=0
-            # LocConst[NumLoc]["pol"] = sparse([-1/2*(b[1][i]+(A[1][i,:]'*(ux+lx)/2)[1]) zeros(1,n); b[1][i]+(A[1][i,:]'*(ux+lx)/2)[1] E[d0+i,:]'; -1/2*A[1][i,:].*(ux-lx)/2 E[1:d0, :]; A[1][i,:].*(ux-lx)/2 E[1:d0, 1:d0+i-1] ones(d0, 1) E[1:d0, d0+i+1: 2*d0+d]]); #(y-1/2)*(Ax(ux-lx)/2+A*(ux+lx)/2+b)>=0
             LocConst[NumLoc]["basis"] = sparse(I(n));
             LocConst[NumLoc]["typ"] = ">=";
             LocConst[NumLoc]["ord"] = 0;
@@ -91,8 +87,6 @@ function solve_moment_lip_one_layer(A, b, c, x00, e, options; cliques = [], size
             LocConst = vcat(LocConst, Array{Any}(undef, 1));
             LocConst[NumLoc] = Dict();
             LocConst[NumLoc]["pol"] = sparse([lx[i]*ux[i]*100 zeros(1,n); -(lx[i]+ux[i])*10 E[i,:]'; 1*1 2*E[i,:]']);
-            # LocConst[NumLoc]["pol"] = sparse([-1 E[i,:]'; 1 2*E[i,:]']); #x(x-1)<=0
-            # LocConst[NumLoc]["pol"] = sparse([-1 zeros(1,n); 1 2*E[i,:]']); #x^2<=1
             LocConst[NumLoc]["basis"] = sparse(I(n));
             LocConst[NumLoc]["typ"] = "<=";
             LocConst[NumLoc]["ord"] = 0;
@@ -119,8 +113,6 @@ function solve_moment_lip_one_layer(A, b, c, x00, e, options; cliques = [], size
             LocConst = vcat(LocConst, Array{Any}(undef, 1));
             LocConst[NumLoc] = Dict();
             LocConst[NumLoc]["pol"] = sparse([-1/2*b[1][i]*10 zeros(1,n); b[1][i]*10 E[d0+i,:]'; [-1/2*A[1][i,:] E[1:d0, :]]; [A[1][i,:] E[1:d0, 1:d0+i-1] ones(d0, 1) E[1:d0, d0+i+1: 2*d0+d]]]);
-            # LocConst[NumLoc]["pol"] = sparse([-1/2*(b[1][i]+(A[1][i,:]'*lx)[1]) zeros(1,n); b[1][i]+(A[1][i,:]'*lx)[1] E[d0+i,:]'; -1/2*A[1][i,:].*(ux-lx) E[1:d0, :]; A[1][i,:].*(ux-lx) E[1:d0, 1:d0+i-1] ones(d0, 1) E[1:d0, d0+i+1: 2*d0+d]]); #(y-1/2)*(Ax(ux-lx)+A*lx+b)>=0
-            # LocConst[NumLoc]["pol"] = sparse([-1/2*(b[1][i]+(A[1][i,:]'*(ux+lx)/2)[1]) zeros(1,n); b[1][i]+(A[1][i,:]'*(ux+lx)/2)[1] E[d0+i,:]'; -1/2*A[1][i,:].*(ux-lx)/2 E[1:d0, :]; A[1][i,:].*(ux-lx)/2 E[1:d0, 1:d0+i-1] ones(d0, 1) E[1:d0, d0+i+1: 2*d0+d]]); #(y-1/2)*(Ax(ux-lx)/2+A*(ux+lx)/2+b)>=0
             LocConst[NumLoc]["basis"] = sparse(I(n));
             LocConst[NumLoc]["typ"] = ">=";
             LocConst[NumLoc]["ord"] = 0;
@@ -170,8 +162,6 @@ function solve_moment_lip_one_layer(A, b, c, x00, e, options; cliques = [], size
             LocConst = vcat(LocConst, Array{Any}(undef, 1));
             LocConst[NumLoc] = Dict();
             LocConst[NumLoc]["pol"] = sparse([lx[i]*ux[i] zeros(1,n); -(lx[i]+ux[i]) E[i,:]'; 1 2*E[i,:]']); #(x-lx)(x-ux)<=0
-            # LocConst[NumLoc]["pol"] = sparse([-1 E[i,:]'; 1 2*E[i,:]']); #x(x-1)<=0
-            # LocConst[NumLoc]["pol"] = sparse([-1 zeros(1,n); 1 2*E[i,:]']); #x^2<=1
             LocConst[NumLoc]["basis"] = sparse(E[sort(subset), :]);
             LocConst[NumLoc]["typ"] = "<=";
             LocConst[NumLoc]["ord"] = options["ord"] - 1;
@@ -206,9 +196,7 @@ function solve_moment_lip_one_layer(A, b, c, x00, e, options; cliques = [], size
             NumLoc += 1
             LocConst = vcat(LocConst, Array{Any}(undef, 1));
             LocConst[NumLoc] = Dict();
-            LocConst[NumLoc]["pol"] = sparse([-1/2*b[1][i] zeros(1,n); b[1][i] E[d0+i,:]'; [-1/2*A[1][i,:] E[1:d0, :]]; [A[1][i,:] E[1:d0, 1:d0+i-1] ones(d0, 1) E[1:d0, d0+i+1: 2*d0+d]]]); #(y-1/2)*(Ax+b)>=0
-            # LocConst[NumLoc]["pol"] = sparse([-1/2*(b[1][i]+(A[1][i,:]'*lx)[1]) zeros(1,n); b[1][i]+(A[1][i,:]'*lx)[1] E[d0+i,:]'; -1/2*A[1][i,:].*(ux-lx) E[1:d0, :]; A[1][i,:].*(ux-lx) E[1:d0, 1:d0+i-1] ones(d0, 1) E[1:d0, d0+i+1: 2*d0+d]]); #(y-1/2)*(Ax(ux-lx)+A*lx+b)>=0
-            # LocConst[NumLoc]["pol"] = sparse([-1/2*(b[1][i]+(A[1][i,:]'*(ux+lx)/2)[1]) zeros(1,n); b[1][i]+(A[1][i,:]'*(ux+lx)/2)[1] E[d0+i,:]'; -1/2*A[1][i,:].*(ux-lx)/2 E[1:d0, :]; A[1][i,:].*(ux-lx)/2 E[1:d0, 1:d0+i-1] ones(d0, 1) E[1:d0, d0+i+1: 2*d0+d]]); #(y-1/2)*(Ax(ux-lx)/2+A*(ux+lx)/2+b)>=0
+            LocConst[NumLoc]["pol"] = sparse([-1/2*b[1][i] zeros(1,n); b[1][i] E[d0+i,:]'; [-1/2*A[1][i,:] E[1:d0, :]]; [A[1][i,:] E[1:d0, 1:d0+i-1] ones(d0, 1) E[1:d0, d0+i+1: 2*d0+d]]]);
             LocConst[NumLoc]["basis"] = sparse(E[sort(subset), :]);
             LocConst[NumLoc]["typ"] = ">=";
             LocConst[NumLoc]["ord"] = options["ord"] - 1;
@@ -230,9 +218,7 @@ function solve_moment_lip_one_layer(A, b, c, x00, e, options; cliques = [], size
                     NumLoc += 1
                     LocConst = vcat(LocConst, Array{Any}(undef, 1));
                     LocConst[NumLoc] = Dict();
-                    LocConst[NumLoc]["pol"] = sparse([-1/2*b[1][i] zeros(1,n); b[1][i] E[d0+i,:]'; [-1/2*A[1][i,:] E[1:d0, :]]; [A[1][i,:] E[1:d0, 1:d0+i-1] ones(d0, 1) E[1:d0, d0+i+1: 2*d0+d]]]); #(y-1/2)*(Ax+b)>=0
-                    # LocConst[NumLoc]["pol"] = sparse([-1/2*(b[1][i]+(A[1][i,:]'*lx)[1]) zeros(1,n); b[1][i]+(A[1][i,:]'*lx)[1] E[d0+i,:]'; -1/2*A[1][i,:].*(ux-lx) E[1:d0, :]; A[1][i,:].*(ux-lx) E[1:d0, 1:d0+i-1] ones(d0, 1) E[1:d0, d0+i+1: 2*d0+d]]); #(y-1/2)*(Ax(ux-lx)+A*lx+b)>=0
-                    # LocConst[NumLoc]["pol"] = sparse([-1/2*(b[1][i]+(A[1][i,:]'*(ux+lx)/2)[1]) zeros(1,n); b[1][i]+(A[1][i,:]'*(ux+lx)/2)[1] E[d0+i,:]'; -1/2*A[1][i,:].*(ux-lx)/2 E[1:d0, :]; A[1][i,:].*(ux-lx)/2 E[1:d0, 1:d0+i-1] ones(d0, 1) E[1:d0, d0+i+1: 2*d0+d]]); #(y-1/2)*(Ax(ux-lx)/2+A*(ux+lx)/2+b)>=0
+                    LocConst[NumLoc]["pol"] = sparse([-1/2*b[1][i] zeros(1,n); b[1][i] E[d0+i,:]'; [-1/2*A[1][i,:] E[1:d0, :]]; [A[1][i,:] E[1:d0, 1:d0+i-1] ones(d0, 1) E[1:d0, d0+i+1: 2*d0+d]]]);
                     LocConst[NumLoc]["basis"] = sparse(E[sort(subset), :]);
                     LocConst[NumLoc]["typ"] = ">=";
                     LocConst[NumLoc]["ord"] = options["ord"] - 1;
@@ -242,34 +228,10 @@ function solve_moment_lip_one_layer(A, b, c, x00, e, options; cliques = [], size
     else
         error("NotImplementedError")
     end
-    @printf("\n%s LCEP problem: clique %s, order %d, level %d, depth %d\n", uppercasefirst(options["range"]), uppercase(options["clique"]), options["ord"], options["level"], options["depth"])
-    # solve_moment_manual(typ, obj, MomConst, LocConst, options);
+    @printf("\n%s LCEP problem: clique %s, order %d, level %d, depth %d\n", uppercasefirst(options["range"]), uppercase(options["clique"]), options["ord"], options["level"], options["depth"]);
     OptVal, running_time, stat = solve_moment_manual(typ, obj, MomConst, LocConst, options; cliques = cliques, sizes = sizes);
     return OptVal, running_time, stat
 end
-options = Dict();
-options["clique"] = "on"; options["method"] =  "ordered";
-options["ord"] = 2; options["depth"] = 1; options["silent"] = true; options["quad"] = true;
-vars = matread("benchmarks/networks/net_1_5.mat");
-A = vars["A"]; b = vars["b"]; c = vars["c"]; x00 = vars["x00"];
-cliques, sizes = ChordalLip(size(A[1], 2), size(A[1], 1));
-for str in ["local"]
-    for i in [0 4 6 8]
-        options["level"] = i; options["range"] = str;
-        OptVal, running_time, status = solve_moment_lip_one_layer(A, b, c, x00, 0.1, options;  cliques = cliques, sizes = sizes)
-    end
-end
-#######################################################################
-lb = 0; e = 0.1;
-for i = 1:10000
-    # r = randn(size(A[1],2),1);
-    # x = 2*e*(abs.(r)./norm(r,2)) .+ x00 .- e;
-    x = 2*e*rand(size(A[1],2),1) .+ x00 .- e;
-    z = A[1]*x .+ b[1];
-    u = 1*(z .>= 0);
-    lb = maximum([lb norm(A[1]'*diagm(u[:])*c, 1)]);
-end
-lb
 
 function solve_moment_cert(A, b, c, x00, eps, options; cliques = [], sizes = [])
     if isequal(options["range"], "global")
@@ -475,29 +437,6 @@ function solve_moment_cert(A, b, c, x00, eps, options; cliques = [], sizes = [])
     OptVal, running_time, stat = solve_moment_manual(typ, obj, MomConst, LocConst, options; cliques=cliques, sizes=sizes);
     return OptVal, running_time, stat
 end
-options = Dict();
-options["clique"] = "on"; options["method"] =  "ordered"; options["range"] = "local";
-options["ord"] = 2; options["depth"] = 1; options["silent"] = true; options["quad"] = true;
-for n in [15]
-    vars = matread("benchmarks/networks/net_1_$(n).mat");
-    A = vars["A"]; b = vars["b"]; c = vars["c"]; x00 = vars["x00"];
-    cliques, sizes = ChordalCert(size(A[1], 2), size(A[1], 1));
-    for i in [0 4 6 8]
-        options["level"] = i;
-        OptVal, running_time, status = solve_moment_cert(A, b, c, x00, 0.1, options;  cliques = cliques, sizes = sizes)
-    end
-end
-#######################################################################
-vars = matread("benchmarks/networks/net_1_5.mat");
-A = vars["A"]; b = vars["b"]; c = vars["c"]; x00 = vars["x00"];
-lb = -Inf; e = 0.1;
-for i = 1:10000
-    x = 2*e*rand(size(A[1],2),1) .+ x00 .- e;
-    z = A[1]*x .+ b[1];
-    y = z .*(z .>= 0);
-    lb = maximum([lb c'*y]);
-end
-lb
 
 function solve_moment_maxcut(A, W, options; cliques = [], sizes = [], M = [])
     n = size(A, 1); typ = "max";
@@ -578,7 +517,6 @@ function solve_moment_maxcut(A, W, options; cliques = [], sizes = [], M = [])
                         else
                             depth = minimum([options["depth"] sizes[j]-1]);
                             subM = []; subL = [];
-                            # subM = M[j]; subL = L[ cliques[j]', cliques[j]'];
                             idx = heuristic(subM, subL, set, idx_i, depth, options; clique = cliques[j], cliques = cliques, siz = sizes[j], sizes = sizes)
                             for k = 1:depth
                                 subset = vcat(idx_i, set[idx[k]:idx[k]+options["level"]-2])
@@ -669,15 +607,6 @@ function solve_moment_maxcut(A, W, options; cliques = [], sizes = [], M = [])
     @printf("\nMAX-CUT Problem: %d vertices, %d edges, clique %s, order %d, level %d, depth %d\n", n, (sum(Matrix(1*(A.!=0))) - sum(diag(Matrix(1*(A.!=0)))))/2 + sum(diag(Matrix(1*(A.!=0)))), uppercase(options["clique"]), options["ord"], options["level"], options["level"])
     OptVal, running_time, stat, M = solve_moment_manual(typ, obj, MomConst, LocConst, options; cliques = cliques, sizes = sizes);
     return OptVal, running_time, stat, M
-end
-options = Dict();
-options["clique"] = "on"; options["method"] =  "ordered";
-options["ord"] = 2; options["depth"] = 1; options["silent"] = true; options["quad"] = true;
-vars = matread("benchmarks/maxcut/maxcut_g20.mat");
-A = vars["A"]; W = vars["W"]; cliques, sizes = ChordalExtension(A);
-for i in [8]
-    options["level"] = i;
-    OptVal, running_time, status = solve_moment_maxcut(A, W, options; cliques = cliques, sizes = sizes)
 end
 
 function solve_moment_mac(A, options)
@@ -790,21 +719,6 @@ function solve_moment_mac(A, options)
     OptVal, running_time, stat = solve_moment_manual(typ, obj, MomConst, LocConst, options);
     return OptVal, running_time, stat
 end
-options = Dict();
-options["clique"] = "off"; options["method"] =  "ordered";
-options["ord"] = 2; options["level"] = 2; options["silent"] = true; options["quad"] = true;
-vars = matread("benchmarks/maxcut/maxcut_w01_100.0.mat");
-A = vars["A"];
-options["depth"] = 0;
-OptVal, running_time, status = solve_moment_mac(A, options)
-#######################################################################
-vars = matread("benchmarks/maxcut/maxcut_g05_100.0.mat");
-A = vars["A"];
-lb = 0;
-for i = 1:10000
-    x = randn(size(A,1),1); x = abs.(x)./sum(abs.(x)); lb = maximum([lb (x'*A*x)[1]]);
-end
-lb
 
 function solve_moment_mip(A, options; cliques = [], sizes = [], M = [])
     n = size(A, 1); typ = "min";
@@ -884,7 +798,6 @@ function solve_moment_mip(A, options; cliques = [], sizes = [], M = [])
                         else
                             depth = minimum([options["depth"] sizes[j]-1]);
                             subM = []; subL = [];
-                            # subM = M[j]; subL = L[ cliques[j]', cliques[j]'];
                             idx = heuristic(subM, subL, set, idx_i, depth, options; clique = cliques[j], cliques = cliques, siz = sizes[j], sizes = sizes)
                             for k = 1:depth
                                 subset = vcat(idx_i, set[idx[k]:idx[k]+options["level"]-2])
@@ -976,17 +889,6 @@ function solve_moment_mip(A, options; cliques = [], sizes = [], M = [])
     @printf("\nMIP Problem: %d vertices, %d edges, clique %s, order %d, level %d, depth %d\n", n, (sum(Matrix(1*(A.!=0))) - sum(diag(Matrix(1*(A.!=0)))))/2 + sum(diag(Matrix(1*(A.!=0)))), uppercase(options["clique"]), options["ord"], options["level"], options["depth"])
     OptVal, running_time, stat, M = solve_moment_manual(typ, obj, MomConst, LocConst, options; cliques = cliques, sizes = sizes);
     return OptVal, running_time, stat, M
-end
-options = Dict();
-options["clique"] = "on"; options["method"] =  "ordered";
-options["ord"] = 2; options["depth"] = 1; options["silent"] = true; options["quad"] = true;
-for n = 1:10
-    vars = matread("benchmarks/mip/mip_gka$(n)d.sparse.mat");
-    A = vars["L"]; cliques, sizes = ChordalExtension(A);
-    for i in [0 4 6 8]
-        options["level"] = i;
-        OptVal, running_time, status = solve_moment_mip(A, options; cliques = cliques, sizes = sizes)
-    end
 end
 
 function solve_moment_qcqp(A, b, options)
@@ -1099,27 +1001,6 @@ function solve_moment_qcqp(A, b, options)
     @printf("\nQCQP problem: %d variables, %d entries, clique %s, order %d, level %d, depth %d\n", n, (sum(Matrix(1*(A.!=0))) - sum(diag(Matrix(1*(A.!=0)))))/2 + sum(diag(Matrix(1*(A.!=0)))), uppercase(options["clique"]), options["ord"], options["level"], options["depth"])
     OptVal, running_time, stat = solve_moment_manual(typ, obj, MomConst, LocConst, options);
     return OptVal, running_time, stat
-end
-options = Dict();
-options["clique"] = "off"; options["method"] =  "ordered";
-options["ord"] = 2; options["depth"] = 10; options["silent"] = true; options["quad"] = true;
-for n = 1:10
-    vars = matread("benchmarks/mip/mip_gka$(n)d.sparse.mat");
-    A = vars["L"]; b = zeros(size(A,1),1);
-    for i in [0 4 6 8]
-        options["level"] = i;
-        OptVal, running_time, status = solve_moment_qcqp(A, b, options)
-    end
-end
-#######################################################################
-for n = 8
-    vars = matread("benchmarks/mip/mip_bqp100-1.sparse.mat");
-    A = vars["L"]; b = zeros(size(A,1),1);
-    lb = 0;
-    for i = 1:1000000
-        x = randn(size(A,1),1); x = abs.(x)./sqrt(sum(x.^2)); lb = minimum([lb (x'*A*x)[1]]);
-    end
-    @printf("n=%d, lb=%.2f\n", n, lb)
 end
 
 # binary assignment, id: 0032
@@ -1289,14 +1170,6 @@ function solve_moment_qplib_BinaryAssignment(obj, constr, type, var,  options)
     OptVal, running_time, stat = solve_moment_manual(typ, objective, MomConst, LocConst, options);
     return OptVal, running_time, stat
 end
-options = Dict();
-options["clique"] = "off"; options["method"] =  "ordered";
-options["ord"] = 2; options["depth"] = 1; options["silent"] = false; options["quad"] = true;
-vars = matread("benchmarks/qcqp/qplib/qplib0032.mat");
-obj = vars["obj"]; constr = vars["constr"]; type = vars["type"]; var = vars["var"];
-constr["c"][3:52,1].=-1; var["u"][1:50].=1;
-options["level"] = 8;
-OptVal, running_time, status  = solve_moment_qplib_BinaryAssignment(obj, constr, type, var,  options)
 
 # qcqp, id: 1661, 1675, 1773, 1535, 1703,
 function solve_moment_qplib_QCQP(obj, constr, type, var,  options)
@@ -1463,13 +1336,6 @@ function solve_moment_qplib_QCQP(obj, constr, type, var,  options)
     OptVal, running_time, stat = solve_moment_manual(typ, objective, MomConst, LocConst, options);
     return OptVal, running_time, stat
 end
-options = Dict();
-options["clique"] = "off"; options["method"] =  "ordered";
-options["ord"] = 2; options["depth"] = 10; options["silent"] = false; options["quad"] = true;
-vars = matread("benchmarks/qcqp/qplib/qplib1535.mat");
-obj = vars["obj"]; constr = vars["constr"]; type = vars["type"]; var = vars["var"];
-options["level"] = 6;
-OptVal, running_time, status  = solve_moment_qplib_QCQP(obj, constr, type, var,  options)
 
 # binary, id: 0067, 0633, 2512, 3762, 5935, 5944, 10072, 10073, 10074
 function solve_moment_qplib_binary(obj, constr, type, var,  options)
@@ -1631,10 +1497,3 @@ function solve_moment_qplib_binary(obj, constr, type, var,  options)
     OptVal, running_time, stat = solve_moment_manual(typ, objective, MomConst, LocConst, options);
     return OptVal, running_time, stat
 end
-options = Dict();
-options["clique"] = "off"; options["method"] =  "ordered";
-options["ord"] = 2; options["depth"] = 1; options["silent"] = false; options["quad"] = true;
-vars = matread("benchmarks/qcqp/qplib/qplib5944.mat");
-obj = vars["obj"]; constr = vars["constr"]; type = vars["type"]; var = vars["var"];
-options["level"] = 8;
-OptVal, running_time, status  = solve_moment_qplib_binary(obj, constr, type, var, options)

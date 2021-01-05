@@ -52,9 +52,6 @@ function ChordalExtension(A; turn="off")
         return cliques, NumElem, A_new
     end
 end
-# vars = matread("A.mat");
-# A = vars["A"];
-# c,s,nA,g,ng = ChordalExtension(A, turn="on");
 
 function ChordalLip(n1, n2)
     G = zeros(2*n1+n2, 2*n1+n2)
@@ -156,58 +153,6 @@ function gen_basis(n, d)
     basis = sparse(basis)
     return basis
 end
-# b = gen_basis(2,2);
-
-function basis2supp(basis, x)
-    NumBasis = length(basis); NumVar = length(x);
-    supp = Array{Int64, 2}(undef, NumBasis, NumVar);
-    for i = 1:NumBasis
-        for j = 1:NumVar
-            supp[i,j] = MultivariatePolynomials.degree(basis[i], x[j]);
-        end
-    end
-    supp = sparse(supp);
-    return supp
-end
-# @polyvar x[1:3];
-# basis = [x[1]; x[1]*x[3]];
-# supp = basis2supp(basis, x);
-
-function pol2supp(pol, x)
-    mon = monomials(pol);
-    coe = coefficients(pol);
-    NumTerms = length(mon); NumVar = length(x);
-    supp = Array{Float64, 2}(undef, NumTerms, 1+NumVar);
-    for i = 1:NumTerms
-        supp[i,1] = coe[i];
-        for j = 1:NumVar
-            supp[i,j+1] = MultivariatePolynomials.degree(mon[i], x[j]);
-        end
-    end
-    supp = sparse(supp);
-    return supp
-end
-# @polyvar x[1:3];
-# pol = 1.5 + x[1] + x[2]^2*x[3];
-# supp = pol2supp(pol, x);
-
-function rep(a, b) # a and b are vectors that don't contain repeated elements
-    n = length(a);
-    m = length(b);
-    set_rep = []; idx_rep_a = []; idx_rep_b = [];
-    for i = 1:n
-        for j = 1:m
-            if a[i] == b[j]
-                set_rep = vcat(set_rep, a[i])
-                idx_rep_a = vcat(idx_rep_a, i)
-                idx_rep_b = vcat(idx_rep_b, j)
-                break
-            end
-        end
-    end
-    return set_rep, idx_rep_a, idx_rep_b
-end
-# a = [1 2 3 4 5 6]; b = [4 5 6 7 8 9]; rep(a,b);
 
 function heuristic(M, L, set, idx_i, depth, options; clique = [], cliques = [], siz = [], sizes = [])
     if options["clique"] == "off"
@@ -625,15 +570,6 @@ function MomentMatrix(model, basis, order, mom, vars; ObjQuad = true)
     matrix = Matrix(matrix);
     return matrix
 end
-# start = time();
-# n = 1; order = 2; num = binomial(20+2, 2);
-# basis = [1 zeros(1,19)];
-# vars = Dict();
-# model = Model(with_optimizer(Mosek.Optimizer));
-# vars["var"] = @variable(model, [1:num, 1:1]);;
-# vars["supp"] = gen_basis(20,2);
-# vars, matrix = MomentMatrix(model, basis, order, vars, ObjQuad = "no");
-# elapsed = time() - start;
 
 function LocalizingMatrix(model, pol, basis, order, mom, loc, vars)
     n = size(basis, 1); # number of variables
@@ -857,29 +793,3 @@ function LocalizingMatrix(model, pol, basis, order, mom, loc, vars)
     end
     return matrix_loc, matrix_sep
 end
-# start = time();
-# n = 2; order = 1; num = binomial(n+2*order+2, 2*order+2);
-# basis = [1 0];
-# pol = [1 1 0; -1 2 0];
-# vars = Dict();
-# model = Model(with_optimizer(Mosek.Optimizer));
-# vars["var"] = @variable(model, y[1:num, 1:1]);
-# vars["supp"] = gen_basis(n, 2*order+2);
-# vars, matrix = LocalizationMatrix(model, pol, basis, order, vars);
-# elapsed = time() - start;
-
-function BnB(depth, Opt,  t, typ, obj, MomConst, LocConst, options; k = 1)
-    for i in [-1 1]
-        d = k
-        LocConst[d]["pol"] = sparse([1 zeros(1,n); i*2 E[d,:]'; 1 2*E[d,:]']);
-        if depth > 1
-            Opt, t = BnB(depth-1, Opt, t, typ, obj, MomConst, LocConst, options; k = d+1)
-        else
-            OptVal, running_time = solve_moment_manual(typ, obj, MomConst, LocConst, options);
-            Opt = maximum([Opt OptVal])
-            t += running_time["model"]
-        end
-    end
-    return Opt, t
-end
- 

@@ -106,18 +106,3 @@ function solve_moment_manual(typ, obj, MomConst, LocConst, options; cliques = []
         return OptVal, running_time, status, value.(vars["MomMat"][1])
     end
 end
-# typ = "max"; obj = [1 1 1];
-# options = Dict();
-# options["silent"] = true; options["quad"] = false;
-# MomConst = Array{Any}(undef, 1);
-# MomConst[1] = Dict();
-# MomConst[1]["basis"] = [1 0; 0 1];
-# MomConst[1]["ord"] = 2;
-# LocConst = Array{Any}(undef, 1);
-# LocConst[1] = Dict();
-# LocConst[1]["basis"] = [1 0; 0 1];
-# LocConst[1]["pol"] = [1 0 0; -1 2 0; -1 0 2];
-# LocConst[1]["typ"] = ">=";
-# LocConst[1]["ord"] = 1;
-# OptVal, running_time, status = solve_moment_manual(typ, obj, MomConst, LocConst, options);
- 
