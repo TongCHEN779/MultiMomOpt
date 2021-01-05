@@ -16,7 +16,7 @@ using SumOfSquares
 using ProgressBars
 using StatsBase
 
-export chordal_extension, get_basis, basis2supp, pol2supp, MomentMatrix, LocalizationMatrix, solve_moment_auto, solve_moment_manual, solve_moment_maxcut, solve_moment_mip, solve_moment_lip_two_layer, solve_moment_lip_two_layer_tssos, solve_moment_lip_one_layer, solve_moment_lip_one_layer_tssos, solve_moment_cert, solve_moment_cert_tssos, solve_moment_maxcut, solve_moment_maxcut_multi_order, solve_moment_maxcut_tssos, solve_moment_mip, solve_moment_mip_multi_order, solve_moment_mip_tssos, solve_moment_mac, solve_moment_qcqp
+export chordal_extension, get_basis, basis2supp, MomentMatrix, LocalizingMatrix, solve_moment_manual, solve_moment_maxcut, solve_moment_mip, solve_moment_lip, solve_moment_cert, solve_moment_maxcut, solve_moment_mip, solve_moment_mac, solve_moment_qcqp, solve_moment_qplib_BinaryAssignment, solve_moment_qplib_QCQP, solve_moment_qplib_binary
 
 include("basic_functions.jl")
 include("solve_moment.jl")

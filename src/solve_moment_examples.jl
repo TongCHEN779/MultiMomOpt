@@ -1,4 +1,4 @@
-function solve_moment_lip_one_layer(A, b, c, x00, e, options; cliques = [], sizes = [])
+function solve_moment_lip(A, b, c, x00, e, options; cliques = [], sizes = [])
     if isequal(options["range"], "global")
         ϵ = 10;
     else
