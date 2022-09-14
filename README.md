@@ -1,5 +1,5 @@
 # MultiMomOpt
-Sublevel hierarchy is an intermediate hierarchy between the d-th order and (d+1)-th order Lasserre's hierarchy for sparse and non-sparse polynomial optimization problems.
+Sublevel hierarchy is an intermediate hierarchy between the d-th order and (d+1)-th order Lasserre's hierarchy for sparse and non-sparse polynomial optimization problems. This repository is the code for paper [A Sublevel Moment-SOS Hierarchy for Polynomial Optimization](https://link.springer.com/content/pdf/10.1007/s10589-021-00325-z.pdf). For more information, contact me: tchen@laas.fr.
 
 ## Dependencies
 JuMP, AMD, LinearAlgebra, MAT, SparseArrays, LightGraphs, GraphPlot, DynamicPolynomials, MosekTools, Printf, Dualization, Random, SumOfSquares, ProgressBars, StatsBase.
