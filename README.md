@@ -1,5 +1,5 @@
 # MultiMomOpt
-Sublevel hierarchy is an intermediate hierarchy between the d-th order and (d+1)-th order Lasserre's hierarchy for sparse and non-sparse polynomial optimization problems. This repository is the code for paper [A Sublevel Moment-SOS Hierarchy for Polynomial Optimization](https://link.springer.com/content/pdf/10.1007/s10589-021-00325-z.pdf). For more information, contact me: tchen@laas.fr.
+Sublevel hierarchy is an intermediate hierarchy between the d-th order and (d+1)-th order Lasserre's hierarchy for sparse and non-sparse polynomial optimization problems. This repository is the code for paper [A Sublevel Moment-SOS Hierarchy for Polynomial Optimization](https://link.springer.com/content/pdf/10.1007/s10589-021-00325-z.pdf). For more information, contact me: toch@di.ku.dk.
 
 ## Dependencies
 JuMP, AMD, LinearAlgebra, MAT, SparseArrays, LightGraphs, GraphPlot, DynamicPolynomials, MosekTools, Printf, Dualization, Random, SumOfSquares, ProgressBars, StatsBase.
@@ -87,7 +87,7 @@ OptVal, running_time, status = solve_moment_cert(A, b, c, x00, eps, options);
 ```
 
 ## References
-The Lipschitz Constant Estimation problem is referred to [Semialgebraic Optimization for Lipschitz Constants of ReLU Networks](https://arxiv.org/abs/2002.03657). The Robustness Certification problem is referred to [Semidefinite relaxations for certifying robustness to adversarial examples](https://arxiv.org/abs/1811.01057). For more information, contact me: tchen@laas.fr.
+The Lipschitz Constant Estimation problem is referred to [Semialgebraic Optimization for Lipschitz Constants of ReLU Networks](https://arxiv.org/abs/2002.03657). The Robustness Certification problem is referred to [Semidefinite relaxations for certifying robustness to adversarial examples](https://arxiv.org/abs/1811.01057). For more information, contact me: toch@di.ku.dk.
 
 # Ellipsoid Problem
 Finding the minimum volume ellipsoid of the image under ReLU networks
@@ -121,4 +121,4 @@ plot(p11, p21, p31, p12, p22, p32, p13, p23, p33, layout = Plots.grid(3,3), fmt 
 ```
 
 ## References
-[Reach-SDP: Reachability Analysis of Closed-Loop Systems with Neural Network Controllers via Semidefinite Programming](https://arxiv.org/abs/2004.07876). For more information, contact me: tchen@laas.fr.
+[Reach-SDP: Reachability Analysis of Closed-Loop Systems with Neural Network Controllers via Semidefinite Programming](https://arxiv.org/abs/2004.07876). For more information, contact me: toch@di.ku.dk.
